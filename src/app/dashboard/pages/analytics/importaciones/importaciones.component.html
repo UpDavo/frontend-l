@@ -1,0 +1,205 @@
+<div class="flex flex-col gap-5">
+
+    @if (svc.error()) {
+    <app-alert-banner type="error" [message]="svc.error()" (dismissed)="svc.error.set(null)" />
+    }
+    @if (svc.success()) {
+    <app-alert-banner type="success" [message]="svc.success()" (dismissed)="svc.success.set(null)" />
+    }
+
+    <!-- Filtros -->
+    <app-filter-bar [isLoading]="svc.loading()" [cols]="4" [hasActions]="true"
+        (search)="search()" (clear)="reset()">
+        <div actions>
+            <button (click)="openCreate()"
+                class="px-4 py-2 bg-brand text-white rounded-xl text-sm font-medium hover:bg-brand-dark transition-colors">
+                <i class="pi pi-plus text-xs mr-1"></i> Nueva Importación
+            </button>
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Buscar</label>
+            <input type="text" [(ngModel)]="fSearch" placeholder="Importador, descripción, marca..."
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Año</label>
+            <input type="number" [(ngModel)]="fAño" placeholder="2024"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Importador</label>
+            <input type="text" [(ngModel)]="fImportador"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">País Origen</label>
+            <input type="text" [(ngModel)]="fPaisOrigen" placeholder="ALEMANIA, USA..."
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Marca</label>
+            <input type="text" [(ngModel)]="fMarca"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Desde</label>
+            <input type="date" [(ngModel)]="fFechaDesde"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Hasta</label>
+            <input type="date" [(ngModel)]="fFechaHasta"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+    </app-filter-bar>
+
+    <!-- Tabla -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="text-base font-semibold text-gray-700">Importaciones de Competencia</h2>
+            <p class="text-xs text-gray-400 mt-0.5">{{ svc.total() | number }} registros</p>
+        </div>
+
+        <app-server-table
+            [data]="svc.items()"
+            [isLoading]="svc.loading()"
+            [totalCount]="svc.total()"
+            [currentPage]="page()"
+            [totalPages]="totalPages()"
+            [pageSize]="pageSize()"
+            emptyIcon="pi pi-truck"
+            emptyMessage="Sin importaciones registradas"
+            emptySubMessage="Carga los datos con load_analytics_data --model importaciones"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)">
+
+            <ng-template #headerTemplate>
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Importador</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Descripción</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Marca</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Qty</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">CIF Total $</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">País Origen</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Acciones</th>
+                </tr>
+            </ng-template>
+
+            <ng-template #rowTemplate let-row>
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{{ row.fecha ?? '—' }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-700 max-w-40 truncate" [title]="row.importador">{{ row.importador ?? '—' }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 max-w-52 truncate" [title]="row.descripcion_comercial">{{ row.descripcion_comercial ?? '—' }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600">{{ row.marca ?? '—' }}</td>
+                    <td class="px-4 py-3 text-sm text-right text-gray-700">{{ row.qty_2 ?? '—' }}</td>
+                    <td class="px-4 py-3 text-sm text-right font-medium text-gray-800">{{ row.usd_cif_tot | number:'1.2-2' }}</td>
+                    <td class="px-4 py-3 text-sm">
+                        @if (row.pais_origen) {
+                        <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                            {{ row.pais_origen }}
+                        </span>
+                        } @else { <span class="text-gray-400">—</span> }
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button (click)="openEdit(row)" title="Editar"
+                                class="p-1.5 text-brand hover:bg-brand/10 rounded-lg transition-colors">
+                                <i class="pi pi-pencil text-sm"></i>
+                            </button>
+                            <button (click)="openDelete(row)" title="Eliminar"
+                                class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                <i class="pi pi-trash text-sm"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+
+        </app-server-table>
+    </div>
+
+</div>
+
+<!-- Form dialog -->
+<app-form-dialog
+    [visible]="showForm"
+    [title]="editingId ? 'Editar Importación' : 'Nueva Importación'"
+    [confirmDisabled]="!formValid"
+    [isLoading]="svc.loading()"
+    (confirmed)="submitForm()"
+    (cancelled)="showForm = false">
+
+    <div class="grid grid-cols-2 gap-3">
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Fecha</label>
+            <input type="date" [(ngModel)]="form.fecha"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Importador *</label>
+            <input type="text" [(ngModel)]="form.importador"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Exportador</label>
+            <input type="text" [(ngModel)]="form.exportador"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Marca</label>
+            <input type="text" [(ngModel)]="form.marca"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div class="col-span-2">
+            <label class="block text-xs text-gray-500 mb-1">Descripción Comercial</label>
+            <input type="text" [(ngModel)]="form.descripcion_comercial"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">País Origen</label>
+            <input type="text" [(ngModel)]="form.pais_origen" placeholder="ALEMANIA"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">País Embarque</label>
+            <input type="text" [(ngModel)]="form.pais_embarque"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Tipo Importación</label>
+            <input type="text" [(ngModel)]="form.tipo_importacion" placeholder="NORMAL / ESPECIAL"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Cantidad (qty 2)</label>
+            <input type="number" step="0.001" [(ngModel)]="form.qty_2"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">USD FOB Total</label>
+            <input type="number" step="0.0001" [(ngModel)]="form.usd_fob_tot"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">USD CIF Total</label>
+            <input type="number" step="0.0001" [(ngModel)]="form.usd_cif_tot"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">KG Bruto</label>
+            <input type="number" step="0.001" [(ngModel)]="form.kg_bruto"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+    </div>
+
+</app-form-dialog>
+
+<app-confirm-dialog
+    [visible]="showDelete"
+    title="Eliminar importación"
+    [message]="'¿Eliminar importación de ' + (deletingRow?.importador ?? '') + '?'"
+    confirmLabel="Eliminar"
+    variant="danger"
+    (confirmed)="confirmDelete()"
+    (cancelled)="showDelete = false" />

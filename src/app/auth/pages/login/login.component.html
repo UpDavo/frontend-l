@@ -1,0 +1,78 @@
+ <!-- Encabezado -->
+<h1 class="text-[1.65rem] font-bold text-gray-900 mb-1">Iniciar Sesión</h1>
+<p class="text-[#7C3AED] text-sm mb-8">Introduzca sus credenciales para
+  continuar</p>
+
+<!-- Formulario -->
+<form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+  <!-- Email -->
+  <div class="mb-5">
+    <label for="email" class="block text-sm font-semibold text-gray-900 mb-2">
+      Usuario / Email
+    </label>
+    <input
+      id="email"
+      type="email"
+      formControlName="email"
+      placeholder="correo@ejemplo.com"
+      class="w-full px-4 py-3 rounded-lg border border-transparent bg-[#EDEBFF] text-gray-800 placeholder-gray-400
+                   focus:outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 transition-all" />
+    @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+    <small class="text-red-500 text-xs mt-1 block">Ingrese un email
+      válido</small>
+    }
+  </div>
+
+  <!-- Contraseña -->
+  <div class="mb-6">
+    <label for="password"
+      class="block text-sm font-semibold text-gray-900 mb-2">
+      Contraseña
+    </label>
+    <input
+      id="password"
+      type="password"
+      formControlName="password"
+      placeholder="••••••••"
+      class="w-full px-4 py-3 rounded-lg border border-transparent bg-[#EDEBFF] text-gray-800 placeholder-gray-400
+                   focus:outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 transition-all" />
+    @if (loginForm.get('password')?.invalid &&
+    loginForm.get('password')?.touched) {
+    <small class="text-red-500 text-xs mt-1 block">La contraseña es
+      requerida</small>
+    }
+  </div>
+
+  <!-- Mensaje de error -->
+  @if (errorMessage()) {
+  <div
+    class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center gap-2">
+    <i class="pi pi-exclamation-circle shrink-0"></i>
+    {{ errorMessage() }}
+  </div>
+  }
+
+  <!-- Botón Submit -->
+  <button
+    type="submit"
+    [disabled]="loginForm.invalid || isLoading()"
+    class="w-full py-3.5 bg-[#7C3AED] hover:bg-[#6D28D9] active:bg-[#5B21B6] text-white font-semibold rounded-xl
+                 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm hover:shadow-md">
+    @if (isLoading()) {
+    <span class="flex items-center justify-center gap-2">
+      <p-progressSpinner styleClass="!w-5 !h-5" strokeWidth="6" />
+    </span>
+    } @else {
+    Iniciar Sesión
+    }
+  </button>
+
+  <!-- Link Olvidaste contraseña -->
+  <!-- <div class="text-center mt-5">
+    <a
+      routerLink="/auth/forgot-password"
+      class="text-[#7C3AED] text-sm hover:underline transition-colors">
+      ¿Olvidaste tu contraseña?
+    </a>
+  </div> -->
+</form>

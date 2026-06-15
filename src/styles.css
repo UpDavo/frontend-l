@@ -1,0 +1,119 @@
+@import "tailwindcss";
+@import "tailwindcss-primeui";
+
+/* Forzar modo claro: desactiva dark mode basado en prefers-color-scheme */
+@custom-variant dark (&:where(.dark, .dark *));
+@import "primeicons/primeicons.css";
+
+@font-face {
+    font-family: "Main";
+    src: url("/fonts/main-regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Main";
+    src: url("/fonts/main-bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Main";
+    src: url("/fonts/main-italic.ttf") format("truetype");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Main";
+    src: url("/fonts/main-bolditalic.ttf") format("truetype");
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+@theme {
+    --font-main: "Space Grotesk", sans-serif;
+    --font-mono: "Space Mono", monospace;
+    --color-brand: #775cff;
+    --color-brand-light: #9b85ff;
+    --color-brand-dark: #6344e6;
+}
+
+body {
+    font-family: "Space Grotesk", sans-serif;
+}
+
+/* Páginas de billing: el host ocupa todo el viewport para que billing-shell pueda ser 100dvh */
+app-payment-setup,
+app-payment-retry,
+app-payment-success,
+app-payment-retry-success,
+app-account-blocked {
+    display: block;
+    height: 100dvh;
+    height: 100vh; /* fallback */
+    overflow: hidden;
+}
+
+/* El componente escáner: flex en mobile para llenar pantalla; auto en desktop */
+app-escaner {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+@media (max-width: 767px) {
+    app-escaner {
+        flex: 1;
+    }
+}
+
+/* Fuerza el video de html5-qrcode a cubrir el contenedor correctamente en mobile */
+#qr-reader video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    border-radius: 0.75rem;
+}
+
+#qr-reader {
+    position: relative;
+}
+/* ── Quill Editor — integración con el diseño ──────────────────────────── */
+quill-editor .ql-container.ql-snow {
+    border: none !important;
+    font-family: inherit;
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+quill-editor .ql-toolbar.ql-snow {
+    border: none !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    border-radius: 0.75rem 0.75rem 0 0;
+    padding: 6px 10px;
+    background-color: #f9fafb;
+}
+
+quill-editor .ql-editor {
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 180px;
+}
+
+quill-editor .ql-editor.ql-blank::before {
+    color: #9ca3af;
+    font-style: normal;
+    left: 14px;
+}
+
+quill-editor .ql-tooltip,
+quill-editor .ql-picker-options {
+    z-index: 1000;
+}

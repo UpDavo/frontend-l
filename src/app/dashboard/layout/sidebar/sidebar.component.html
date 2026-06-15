@@ -1,0 +1,142 @@
+<!-- ═══ Sidebar móvil (Drawer PrimeNG) ═══ -->
+<p-drawer
+    [visible]="mobileOpen()"
+    (onHide)="closeSidebar.emit()"
+    [showCloseIcon]="false"
+    position="left"
+    styleClass="w-64 p-0 lg:!hidden">
+    <ng-template #header>
+        <div class="flex items-center gap-2.5 px-2">
+            <img src="/logos/cropped-Icono.png" alt="HINT" class="h-8 w-auto" />
+            <span
+                class="text-lg font-bold text-gray-900 whitespace-nowrap">HINT.</span>
+        </div>
+    </ng-template>
+    <ng-container *ngTemplateOutlet="navFull" />
+</p-drawer>
+
+<!-- ═══ Sidebar desktop ═══ -->
+<aside
+    class="hidden lg:flex h-screen flex-col bg-white border-r border-gray-200 transition-all duration-200"
+    [class.w-64]="!collapsed()"
+    [class.w-16]="collapsed()">
+
+    <!-- Logo -->
+    <div
+        class="flex items-center gap-2.5 px-4 py-4 border-b border-gray-100 overflow-hidden"
+        [class.justify-center]="collapsed()">
+        <img src="/logos/cropped-Icono.png" alt="HINT"
+            class="h-8 w-8 shrink-0 object-contain" />
+        @if (!collapsed()) {
+        <span
+            class="text-lg font-bold text-gray-900 whitespace-nowrap">HINT.</span>
+        }
+    </div>
+
+    <!-- Nav expandido -->
+    @if (!collapsed()) {
+    <ng-container *ngTemplateOutlet="navFull" />
+    } @else {
+    <!-- Nav colapsado (solo iconos) -->
+    <nav class="flex-1 overflow-y-auto py-4 space-y-1">
+        @for (section of sections(); track section.title) {
+        @for (item of section.items; track item.label) {
+        @if (item.children) {
+        <!-- Item con children: muestra solo icono, click expande -->
+        <a
+            [routerLink]="item.children[0].route"
+            routerLinkActive="bg-primary-600 text-white"
+            pTooltip="{{ item.label }}"
+            tooltipPosition="right"
+            class="flex items-center justify-center w-10 h-10 mx-auto rounded-lg text-gray-600
+                                   hover:bg-primary-50 hover:text-primary-700 transition-colors">
+            <i [class]="item.icon" class="text-lg"></i>
+        </a>
+        } @else {
+        <a
+            [routerLink]="item.route"
+            routerLinkActive="bg-primary-600 text-white"
+            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+            pTooltip="{{ item.label }}"
+            tooltipPosition="right"
+            class="flex items-center justify-center w-10 h-10 mx-auto rounded-lg text-gray-600
+                                   hover:bg-primary-50 hover:text-primary-700 transition-colors">
+            <i [class]="item.icon" class="text-lg"></i>
+        </a>
+        }
+        }
+        }
+    </nav>
+    }
+</aside>
+
+<!-- ═══ Nav completo (reutilizado por drawer y sidebar expandido) ═══ -->
+<ng-template #navFull>
+    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        @for (section of sections(); track section.title) {
+        @if (section.title) {
+        <div class="px-3 pt-2">
+            <p
+                class="text-[11px] font-semibold tracking-wider text-gray-400 uppercase">
+                {{ section.title }}
+            </p>
+        </div>
+        }
+
+        <ul class="space-y-0.5">
+            @for (item of section.items; track item.label) {
+            <li>
+                @if (item.children) {
+                <button
+                    [attr.data-tour-id]="item.tourId ?? null"
+                    (click)="toggleExpand(item.label)"
+                    class="flex w-full items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700
+                                       hover:bg-primary-50 hover:text-primary-700 transition-colors cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <i [class]="item.icon"
+                            class="text-base w-5 text-center"></i>
+                        <span>{{ item.label }}</span>
+                    </div>
+                    <i
+                        class="pi text-xs text-gray-400 transition-transform duration-200"
+                        [class.pi-chevron-down]="!isExpanded(item.label)"
+                        [class.pi-chevron-up]="isExpanded(item.label)"></i>
+                </button>
+
+                @if (isExpanded(item.label)) {
+                <ul class="ml-8 mt-1 space-y-0.5">
+                    @for (child of item.children; track child.label) {
+                    <li>
+                        <a
+                            [routerLink]="child.route"
+                            routerLinkActive="bg-primary-100 text-primary-700 font-semibold"
+                            [routerLinkActiveOptions]="{ exact: true }"
+                            class="block px-3 py-2 rounded-lg text-sm text-gray-600
+                                                       hover:bg-primary-50 hover:text-primary-700 transition-colors"
+                            (click)="closeSidebar.emit()">
+                            {{ child.label }}
+                        </a>
+                    </li>
+                    }
+                </ul>
+                }
+                } @else {
+                <a
+                    [attr.data-tour-id]="item.tourId ?? null"
+                    [routerLink]="item.route"
+                    routerLinkActive="bg-primary-600 text-white shadow-sm"
+                    [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700
+                                       hover:bg-primary-50 hover:text-primary-700 transition-colors"
+                    (click)="closeSidebar.emit()">
+                    <i [class]="item.icon"
+                        class="text-base w-5 text-center"></i>
+                    <span>{{ item.label }}</span>
+                </a>
+                }
+            </li>
+            }
+        </ul>
+        }
+    </nav>
+</ng-template>

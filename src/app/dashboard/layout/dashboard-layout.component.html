@@ -1,0 +1,39 @@
+<div class="flex h-dvh overflow-hidden bg-gray-50">
+  <!-- Sidebar -->
+  <app-sidebar
+    [collapsed]="sidebarCollapsed()"
+    [mobileOpen]="mobileDrawerOpen()"
+    [isAdmin]="isAdmin()"
+    [permissions]="permissions()"
+    (closeSidebar)="closeMobileDrawer()" />
+
+  <!-- Contenido principal -->
+  <div class="flex flex-1 flex-col min-h-0 overflow-hidden">
+    <!-- Topbar -->
+    <app-topbar
+      [fullName]="fullName()"
+      [initials]="initials()"
+      [roleName]="role()?.name ?? null"
+      [brandName]="brandName()"
+      (toggleSidebar)="toggleSidebar()"
+      (logoutClick)="logout()" />
+
+    <!-- Área de contenido scrollable -->
+    <main class="flex-1 overflow-y-auto p-6 flex flex-col">
+      <!-- ─── Título de página (leído del data de la ruta) ─── -->
+      @if (pageTitle()) {
+      <div class="flex items-center gap-3 mb-6">
+        @if (pageIcon()) {
+        <i [class]="pageIcon()! + ' text-3xl text-brand'"></i>
+        }
+        <h1 class="text-2xl font-bold text-gray-800">{{ pageTitle() }}</h1>
+      </div>
+      }
+
+      <router-outlet />
+    </main>
+
+    <!-- Footer -->
+    <app-footer />
+  </div>
+</div>

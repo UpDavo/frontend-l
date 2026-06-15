@@ -1,0 +1,196 @@
+<div class="flex flex-col gap-5">
+
+    @if (svc.error()) {
+    <app-alert-banner type="error" [message]="svc.error()" (dismissed)="svc.error.set(null)" />
+    }
+    @if (svc.success()) {
+    <app-alert-banner type="success" [message]="svc.success()" (dismissed)="svc.success.set(null)" />
+    }
+
+    <!-- Filtros -->
+    <app-filter-bar [isLoading]="svc.loading()" [cols]="4" [hasActions]="true"
+        (search)="search()" (clear)="reset()">
+        <div actions>
+            <button (click)="openCreate()"
+                class="px-4 py-2 bg-brand text-white rounded-xl text-sm font-medium hover:bg-brand-dark transition-colors">
+                <i class="pi pi-plus text-xs mr-1"></i> Nuevo Item
+            </button>
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Buscar</label>
+            <input type="text" [(ngModel)]="fSearch" placeholder="Item, descripción, repuesto..."
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Marca</label>
+            <input type="text" [(ngModel)]="fMarca" placeholder="HORTON, MERCEDES..."
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Fábrica</label>
+            <input type="text" [(ngModel)]="fFabrica"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Estado Stock</label>
+            <input type="text" [(ngModel)]="fEstado" placeholder="AGOTADO, DISPONIBLE..."
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Categoría</label>
+            <input type="text" [(ngModel)]="fCategoria"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+    </app-filter-bar>
+
+    <!-- Tabla -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="text-base font-semibold text-gray-700">Stock Bodega — Lento Movimiento</h2>
+            <p class="text-xs text-gray-400 mt-0.5">{{ svc.total() | number }} items</p>
+        </div>
+
+        <app-server-table
+            [data]="svc.items()"
+            [isLoading]="svc.loading()"
+            [totalCount]="svc.total()"
+            [currentPage]="page()"
+            [totalPages]="totalPages()"
+            [pageSize]="pageSize()"
+            emptyIcon="pi pi-box"
+            emptyMessage="Sin stock registrado"
+            emptySubMessage="Carga los datos con load_analytics_data --model stock"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)">
+
+            <ng-template #headerTemplate>
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Item</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Descripción</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Marca</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Fábrica</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Stock</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">PVP $</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Acciones</th>
+                </tr>
+            </ng-template>
+
+            <ng-template #rowTemplate let-row>
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3 text-sm font-medium text-gray-800 whitespace-nowrap">{{ row.item }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 max-w-48 truncate" [title]="row.descripcion">{{ row.descripcion }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600">{{ row.marca ?? '—' }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ row.fabrica ?? '—' }}</td>
+                    <td class="px-4 py-3 text-sm text-right font-semibold"
+                        [class]="(row.stock_act_bod ?? 0) <= 0 ? 'text-red-500' : 'text-gray-800'">
+                        {{ row.stock_act_bod ?? 0 }}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-right text-gray-800">{{ row.precio_pvp | number:'1.2-2' }}</td>
+                    <td class="px-4 py-3 text-sm">
+                        @if (row.estado_stock) {
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                            [class]="row.estado_stock === 'AGOTADO' ? 'bg-red-100 text-red-700' :
+                                     row.estado_stock === 'DISPONIBLE' ? 'bg-green-100 text-green-700' :
+                                     'bg-gray-100 text-gray-600'">
+                            {{ row.estado_stock }}
+                        </span>
+                        } @else { <span class="text-gray-400">—</span> }
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button (click)="openEdit(row)" title="Editar"
+                                class="p-1.5 text-brand hover:bg-brand/10 rounded-lg transition-colors">
+                                <i class="pi pi-pencil text-sm"></i>
+                            </button>
+                            <button (click)="openDelete(row)" title="Eliminar"
+                                class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                <i class="pi pi-trash text-sm"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+
+        </app-server-table>
+    </div>
+
+</div>
+
+<!-- Form dialog -->
+<app-form-dialog
+    [visible]="showForm"
+    [title]="editingId ? 'Editar Item' : 'Nuevo Item'"
+    [confirmDisabled]="!formValid"
+    [isLoading]="svc.loading()"
+    (confirmed)="submitForm()"
+    (cancelled)="showForm = false">
+
+    <div class="grid grid-cols-2 gap-3">
+        <div class="col-span-2">
+            <label class="block text-xs text-gray-500 mb-1">Item * (código único)</label>
+            <input type="text" [(ngModel)]="form.item" placeholder="F HOR 999074-02"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div class="col-span-2">
+            <label class="block text-xs text-gray-500 mb-1">Descripción</label>
+            <input type="text" [(ngModel)]="form.descripcion"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Marca</label>
+            <input type="text" [(ngModel)]="form.marca"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Fábrica</label>
+            <input type="text" [(ngModel)]="form.fabrica"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Línea</label>
+            <input type="text" [(ngModel)]="form.linea"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Categoría</label>
+            <input type="text" [(ngModel)]="form.categoria"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Estado Stock</label>
+            <input type="text" [(ngModel)]="form.estado_stock" placeholder="DISPONIBLE / AGOTADO"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Stock Actual</label>
+            <input type="number" [(ngModel)]="form.stock_act_bod"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Precio PVP $</label>
+            <input type="number" step="0.01" [(ngModel)]="form.precio_pvp"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Precio Mostrador $</label>
+            <input type="number" step="0.01" [(ngModel)]="form.precio_mostrador"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Precio Mayorista $</label>
+            <input type="number" step="0.01" [(ngModel)]="form.precio_mayorista"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+    </div>
+
+</app-form-dialog>
+
+<app-confirm-dialog
+    [visible]="showDelete"
+    title="Eliminar item"
+    [message]="'¿Eliminar ' + (deletingRow?.item ?? '') + ' del stock?'"
+    confirmLabel="Eliminar"
+    variant="danger"
+    (confirmed)="confirmDelete()"
+    (cancelled)="showDelete = false" />

@@ -1,0 +1,103 @@
+<!-- ─── Loading ─────────────────────────────────────────────── -->
+@if (isLoading) {
+<div class="p-8 flex justify-center">
+    <i class="pi pi-spinner pi-spin text-3xl text-brand"></i>
+</div>
+
+<!-- ─── Sin datos ────────────────────────────────────────────── -->
+} @else if (!data.length) {
+
+@if (emptyTemplate) {
+<ng-container *ngTemplateOutlet="emptyTemplate" />
+} @else {
+<div class="p-12 flex flex-col items-center justify-center gap-3 text-center">
+    <div
+        class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+        <i class="{{ emptyIcon }} text-2xl text-gray-400"></i>
+    </div>
+    <p class="text-gray-500 font-medium">{{ emptyMessage }}</p>
+    <p class="text-sm text-gray-400">{{ emptySubMessage }}</p>
+</div>
+}
+
+<!-- ─── Tabla ────────────────────────────────────────────────── -->
+} @else {
+<div class="overflow-x-auto">
+    <table class="w-full border-collapse" [style.min-width]="minWidth">
+        <thead class="bg-gray-50 border-b border-gray-100">
+            @if (headerTemplate) {
+            <ng-container *ngTemplateOutlet="headerTemplate" />
+            }
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+            @for (item of data; track $index) {
+            @if (rowTemplate) {
+            <ng-container
+                *ngTemplateOutlet="rowTemplate; context: { $implicit: item }" />
+            }
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- ─── Paginación server-side ───────────────────────────────── -->
+<div
+    class="px-4 py-3 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+
+    <!-- Info + tamaño de página -->
+    <div class="flex items-center gap-3 text-sm text-gray-500">
+        <span>
+            Página {{ currentPage }} de {{ totalPages }}
+            &nbsp;·&nbsp; {{ totalCount }} registro(s)
+        </span>
+        <select
+            class="border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-brand/30"
+            [value]="pageSize"
+            (change)="onPageSizeChange($event)">
+            <option value="10">10 / pág</option>
+            <option value="20">20 / pág</option>
+            <option value="50">50 / pág</option>
+        </select>
+    </div>
+
+    <!-- Controles de página -->
+    <div class="flex items-center gap-1">
+        <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(1)">
+            <i class="pi pi-angle-double-left text-xs"></i>
+        </button>
+        <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(currentPage - 1)">
+            <i class="pi pi-angle-left text-xs"></i>
+        </button>
+
+        @for (p of pageRange; track p) {
+        <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors"
+            [class]="p === currentPage
+                ? 'bg-brand text-white'
+                : 'text-gray-600 hover:bg-gray-100'"
+            (click)="goToPage(p)">
+            {{ p }}
+        </button>
+        }
+
+        <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(currentPage + 1)">
+            <i class="pi pi-angle-right text-xs"></i>
+        </button>
+        <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(totalPages)">
+            <i class="pi pi-angle-double-right text-xs"></i>
+        </button>
+    </div>
+</div>
+}

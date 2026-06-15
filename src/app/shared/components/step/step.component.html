@@ -1,0 +1,52 @@
+<div
+    class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+    <!-- ─── Header (clic para abrir/cerrar) ─────────────────────── -->
+    <button
+        type="button"
+        class="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-gray-50 transition-colors focus:outline-none"
+        (click)="toggle.emit()">
+
+        <div class="flex items-center gap-2.5">
+            <!-- Ícono -->
+            <div
+                class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                [ngClass]="iconBg()">
+                <i class="text-xs" [ngClass]="[icon(), iconColor()]"></i>
+            </div>
+
+            <!-- Título -->
+            <p
+                class="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                {{ title() }}
+            </p>
+
+            <!-- Badge opcional (contador) -->
+            @if (badge() !== null && badge()! > 0) {
+            <span
+                class="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold"
+                [ngClass]="badgeColor()">
+                {{ badge() }}
+            </span>
+            }
+
+            <!-- Tag "opcional" -->
+            @if (optional()) {
+            <span class="text-xs text-gray-400 font-normal">(opcional)</span>
+            }
+        </div>
+
+        <!-- Chevron -->
+        <i
+            class="pi shrink-0 text-gray-400 text-xs transition-transform duration-200"
+            [class]="expanded() ? 'pi-chevron-up' : 'pi-chevron-down'"></i>
+    </button>
+
+    <!-- ─── Contenido ────────────────────────────────────────────── -->
+    @if (expanded()) {
+    <div @slideDown class="px-5 pb-5">
+        <ng-content />
+    </div>
+    }
+
+</div>
