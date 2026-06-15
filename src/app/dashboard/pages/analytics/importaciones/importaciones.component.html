@@ -8,7 +8,7 @@
     }
 
     <!-- Filtros -->
-    <app-filter-bar [isLoading]="svc.loading()" [cols]="4" [hasActions]="true"
+    <app-filter-bar [isLoading]="svc.loading()" [cols]="6" [hasActions]="true"
         (search)="search()" (clear)="reset()">
         <div actions>
             <button (click)="openCreate()"
@@ -22,24 +22,25 @@
                 class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
         </div>
         <div>
-            <label class="block text-xs text-gray-500 mb-1">Año</label>
-            <input type="number" [(ngModel)]="fAño" placeholder="2024"
-                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
-        </div>
-        <div>
             <label class="block text-xs text-gray-500 mb-1">Importador</label>
-            <input type="text" [(ngModel)]="fImportador"
-                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            <app-multi-select
+                [options]="svc.opciones().importadores"
+                placeholder="Todos"
+                [(value)]="fImportadores" />
         </div>
         <div>
             <label class="block text-xs text-gray-500 mb-1">País Origen</label>
-            <input type="text" [(ngModel)]="fPaisOrigen" placeholder="ALEMANIA, USA..."
-                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            <app-multi-select
+                [options]="svc.opciones().paises_origen"
+                placeholder="Todos"
+                [(value)]="fPaisesOrigen" />
         </div>
         <div>
             <label class="block text-xs text-gray-500 mb-1">Marca</label>
-            <input type="text" [(ngModel)]="fMarca"
-                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            <app-multi-select
+                [options]="svc.opciones().marcas"
+                placeholder="Todas"
+                [(value)]="fMarcas" />
         </div>
         <div>
             <label class="block text-xs text-gray-500 mb-1">Desde</label>
@@ -52,6 +53,25 @@
                 class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
         </div>
     </app-filter-bar>
+
+    <!-- Métricas -->
+    @if (svc.metricas(); as m) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Total CIF período</p>
+            <p class="text-3xl font-bold text-gray-800">${{ m.total_cif | number:'1.0-0' }}</p>
+            <p class="text-xs text-gray-400">USD CIF acumulado en importaciones filtradas</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Registros</p>
+            <p class="text-3xl font-bold text-gray-800">{{ m.total_registros | number }}</p>
+            <p class="text-xs text-gray-400">Importaciones en el período filtrado</p>
+        </div>
+
+    </div>
+    }
 
     <!-- Tabla -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

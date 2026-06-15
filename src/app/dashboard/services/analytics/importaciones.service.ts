@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { AnalyticsImportacionesRepository, ImportacionesFilter } from '../../repositories/analytics-importaciones.repository';
+import { AnalyticsImportacionesRepository, ImportacionesFilter, ImportacionMetricas, ImportacionMetricasFilter, ImportacionOpciones } from '../../repositories/analytics-importaciones.repository';
 
 @Injectable({ providedIn: 'root' })
 export class ImportacionesService {
@@ -10,10 +10,26 @@ export class ImportacionesService {
     readonly loading  = signal(false);
     readonly error    = signal<string | null>(null);
     readonly success  = signal<string | null>(null);
+    readonly opciones  = signal<ImportacionOpciones>({ importadores: [], paises_origen: [], marcas: [] });
+    readonly metricas  = signal<ImportacionMetricas | null>(null);
 
     private clear(): void {
         this.error.set(null);
         this.success.set(null);
+    }
+
+    loadOpciones(): void {
+        this.repo.getOpciones().subscribe({
+            next: (res) => this.opciones.set(res),
+            error: () => {},
+        });
+    }
+
+    loadMetricas(f: ImportacionMetricasFilter = {}): void {
+        this.repo.getMetricas(f).subscribe({
+            next: (res) => this.metricas.set(res),
+            error: () => {},
+        });
     }
 
     load(f: ImportacionesFilter = {}): void {

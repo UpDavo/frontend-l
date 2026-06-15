@@ -7,8 +7,19 @@ import { FilterBarComponent } from '../../../../shared/components/filter-bar/fil
 import { AlertBannerComponent } from '../../../../shared/components/alert-banner/alert-banner.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { MultiSelectComponent } from '../../../../shared/components/multi-select/multi-select.component';
 
 const PAGE_SIZE = 10;
+
+function currentMonthRange(): { desde: string; hasta: string } {
+    const now   = new Date();
+    const year  = now.getFullYear();
+    const month = now.getMonth();
+    const desde = new Date(year, month, 1);
+    const hasta = new Date(year, month + 1, 0);
+    const fmt   = (d: Date) => d.toISOString().slice(0, 10);
+    return { desde: fmt(desde), hasta: fmt(hasta) };
+}
 
 @Component({
     selector: 'app-ventas',
@@ -17,6 +28,7 @@ const PAGE_SIZE = 10;
         CommonModule, FormsModule,
         ServerTableComponent, FilterBarComponent,
         AlertBannerComponent, FormDialogComponent, ConfirmDialogComponent,
+        MultiSelectComponent,
     ],
     templateUrl: './ventas.component.html',
 })
@@ -25,12 +37,10 @@ export class VentasComponent implements OnInit {
 
     // ── Filtros ───────────────────────────────────────────────────
     fSearch     = '';
-    fAño        = '';
-    fMes        = '';
-    fCiudad     = '';
+    fCiudades: string[] = [];
     fItem       = '';
-    fFechaDesde = '';
-    fFechaHasta = '';
+    fFechaDesde = currentMonthRange().desde;
+    fFechaHasta = currentMonthRange().hasta;
 
     // ── Paginación ────────────────────────────────────────────────
     page        = signal(1);
@@ -50,30 +60,40 @@ export class VentasComponent implements OnInit {
     showDelete  = false;
     deletingRow: any = null;
 
-    ngOnInit(): void { this.loadData(); }
+    ngOnInit(): void { this.svc.loadCiudades(); this.loadData(); }
 
     private buildFilter() {
         return {
-            page: this.page(),
-            page_size: this.pageSize(),
-            search:      this.fSearch     || undefined,
-            año:         this.fAño        || undefined,
-            mes:         this.fMes        || undefined,
-            ciudad:      this.fCiudad     || undefined,
+            page:        this.page(),
+            page_size:   this.pageSize(),
+            search:      this.fSearch              || undefined,
+            ciudades:    this.fCiudades.length ? this.fCiudades : undefined,
+            item:        this.fItem                || undefined,
+            fecha_desde: this.fFechaDesde          || undefined,
+            fecha_hasta: this.fFechaHasta          || undefined,
+        };
+    }
+
+    private buildMetricasFilter() {
+        return {
+            ciudades:    this.fCiudades.length ? this.fCiudades : undefined,
             item:        this.fItem       || undefined,
             fecha_desde: this.fFechaDesde || undefined,
             fecha_hasta: this.fFechaHasta || undefined,
         };
     }
 
-    loadData(): void { this.svc.load(this.buildFilter()); }
+    loadData(): void {
+        this.svc.load(this.buildFilter());
+        this.svc.loadMetricas(this.buildMetricasFilter());
+    }
 
     search(): void { this.page.set(1); this.loadData(); }
 
     reset(): void {
-        this.fSearch = ''; this.fAño = ''; this.fMes = '';
-        this.fCiudad = ''; this.fItem = '';
-        this.fFechaDesde = ''; this.fFechaHasta = '';
+        const { desde, hasta } = currentMonthRange();
+        this.fSearch = ''; this.fCiudades = []; this.fItem = '';
+        this.fFechaDesde = desde; this.fFechaHasta = hasta;
         this.page.set(1); this.loadData();
     }
 

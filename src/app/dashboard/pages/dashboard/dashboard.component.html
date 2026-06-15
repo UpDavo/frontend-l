@@ -1,4 +1,183 @@
-<div class="p-6">
-    <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
-    <p class="text-sm text-gray-400 mt-1">Bienvenido al panel de analítica.</p>
+<div class="flex flex-col gap-6">
+
+    <!-- Header -->
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Resumen ejecutivo de los módulos principales.</p>
+    </div>
+
+    <!-- Filtro período -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div class="flex flex-wrap items-end gap-3">
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Desde</label>
+                <input type="date" [(ngModel)]="fFechaDesde"
+                    class="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Hasta</label>
+                <input type="date" [(ngModel)]="fFechaHasta"
+                    class="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <button (click)="load()" [disabled]="loading()"
+                class="px-4 py-2 bg-brand text-white rounded-xl text-sm font-medium hover:bg-brand-dark transition-colors disabled:opacity-50">
+                @if (loading()) { <i class="pi pi-spin pi-spinner text-xs mr-1"></i> }
+                Aplicar
+            </button>
+            <button (click)="reset()" [disabled]="loading()"
+                class="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50">
+                Mes actual
+            </button>
+        </div>
+    </div>
+
+    @if (resumen(); as r) {
+
+    <!-- ── Ventas Diarias ──────────────────────────────────────────────────── -->
+    <section class="flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-6 rounded-full bg-brand"></span>
+                <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Ventas Diarias</h2>
+            </div>
+            <a routerLink="/dashboard/analytics/ventas"
+                class="text-xs text-brand hover:underline flex items-center gap-1">
+                Ver detalle <i class="pi pi-arrow-right text-[10px]"></i>
+            </a>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Total Neto período</p>
+                <p class="text-3xl font-bold text-gray-800">${{ r.ventas.total_neto | number:'1.0-0' }}</p>
+                <p class="text-xs text-gray-400">{{ r.periodo.desde }} — {{ r.periodo.hasta }}</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Registros de venta</p>
+                <p class="text-3xl font-bold text-gray-800">{{ r.ventas.total_registros | number }}</p>
+                <p class="text-xs text-gray-400">Transacciones en el período</p>
+            </div>
+        </div>
+
+        <!-- Gráficas -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <p class="text-xs text-gray-500 font-medium mb-3">Ventas por ciudad (top 6)</p>
+                @if (r.ventas.por_ciudad.length) {
+                    <app-pie-chart [labels]="labels(r.ventas.por_ciudad)" [data]="values(r.ventas.por_ciudad)" />
+                } @else {
+                    <p class="text-sm text-gray-400 text-center py-8">Sin datos de ciudad en el período</p>
+                }
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <p class="text-xs text-gray-500 font-medium mb-3">Top asesores (registros)</p>
+                <app-bar-chart
+                    [labels]="labels(r.ventas.por_asesor)"
+                    [data]="values(r.ventas.por_asesor)"
+                    color="#775cff" />
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Stock Bodega ───────────────────────────────────────────────────── -->
+    <section class="flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-6 rounded-full bg-emerald-500"></span>
+                <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Stock Bodega</h2>
+            </div>
+            <a routerLink="/dashboard/analytics/stock"
+                class="text-xs text-brand hover:underline flex items-center gap-1">
+                Ver detalle <i class="pi pi-arrow-right text-[10px]"></i>
+            </a>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Referencias en stock</p>
+                <p class="text-3xl font-bold text-gray-800">{{ r.stock.total_items | number }}</p>
+                <p class="text-xs text-gray-400">Total items activos en bodega</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Valor total PVP</p>
+                <p class="text-3xl font-bold text-gray-800">${{ r.stock.total_pvp | number:'1.0-0' }}</p>
+                <p class="text-xs text-gray-400">Suma precio PVP de todas las referencias</p>
+            </div>
+        </div>
+
+        <!-- Gráficas -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <p class="text-xs text-gray-500 font-medium mb-3">Distribución por estado</p>
+                @if (r.stock.por_estado.length) {
+                    <app-pie-chart [labels]="labels(r.stock.por_estado)" [data]="values(r.stock.por_estado)" />
+                } @else {
+                    <p class="text-sm text-gray-400 text-center py-8">Sin datos de estado</p>
+                }
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <p class="text-xs text-gray-500 font-medium mb-3">Top marcas (referencias)</p>
+                <app-bar-chart
+                    [labels]="labels(r.stock.por_marca)"
+                    [data]="values(r.stock.por_marca)"
+                    color="#34d399" />
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Importaciones ──────────────────────────────────────────────────── -->
+    <section class="flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-6 rounded-full bg-amber-500"></span>
+                <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Importaciones</h2>
+            </div>
+            <a routerLink="/dashboard/analytics/importaciones"
+                class="text-xs text-brand hover:underline flex items-center gap-1">
+                Ver detalle <i class="pi pi-arrow-right text-[10px]"></i>
+            </a>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Total CIF período</p>
+                <p class="text-3xl font-bold text-gray-800">${{ r.importaciones.total_cif | number:'1.0-0' }}</p>
+                <p class="text-xs text-gray-400">{{ r.periodo.desde }} — {{ r.periodo.hasta }}</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Registros importados</p>
+                <p class="text-3xl font-bold text-gray-800">{{ r.importaciones.total_registros | number }}</p>
+                <p class="text-xs text-gray-400">Importaciones en el período</p>
+            </div>
+        </div>
+
+        <!-- Gráficas -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <p class="text-xs text-gray-500 font-medium mb-3">Distribución por país origen</p>
+                @if (r.importaciones.por_pais.length) {
+                    <app-pie-chart [labels]="labels(r.importaciones.por_pais)" [data]="values(r.importaciones.por_pais)" />
+                } @else {
+                    <p class="text-sm text-gray-400 text-center py-8">Sin datos de país en el período</p>
+                }
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <p class="text-xs text-gray-500 font-medium mb-3">Top importadores (USD CIF)</p>
+                <app-bar-chart
+                    [labels]="labels(r.importaciones.por_importador)"
+                    [data]="values(r.importaciones.por_importador)"
+                    color="#f59e0b" />
+            </div>
+        </div>
+    </section>
+
+    } @else if (loading()) {
+    <div class="flex items-center justify-center py-20">
+        <i class="pi pi-spin pi-spinner text-brand text-2xl"></i>
+    </div>
+    }
+
 </div>

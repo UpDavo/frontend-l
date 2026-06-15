@@ -8,7 +8,7 @@
     }
 
     <!-- Filtros -->
-    <app-filter-bar [isLoading]="svc.loading()" [cols]="4" [hasActions]="true"
+    <app-filter-bar [isLoading]="svc.loading()" [cols]="5" [hasActions]="true"
         (search)="search()" (clear)="reset()">
         <div actions>
             <button (click)="openCreate()"
@@ -23,25 +23,52 @@
         </div>
         <div>
             <label class="block text-xs text-gray-500 mb-1">Marca</label>
-            <input type="text" [(ngModel)]="fMarca" placeholder="HORTON, MERCEDES..."
-                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            <app-multi-select
+                [options]="svc.opciones().marcas"
+                placeholder="Todas las marcas"
+                [(value)]="fMarcas" />
         </div>
         <div>
             <label class="block text-xs text-gray-500 mb-1">Fábrica</label>
-            <input type="text" [(ngModel)]="fFabrica"
-                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            <app-multi-select
+                [options]="svc.opciones().fabricas"
+                placeholder="Todas las fábricas"
+                [(value)]="fFabricas" />
         </div>
         <div>
             <label class="block text-xs text-gray-500 mb-1">Estado Stock</label>
-            <input type="text" [(ngModel)]="fEstado" placeholder="AGOTADO, DISPONIBLE..."
-                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            <app-multi-select
+                [options]="svc.opciones().estados"
+                placeholder="Todos los estados"
+                [(value)]="fEstados" />
         </div>
         <div>
             <label class="block text-xs text-gray-500 mb-1">Categoría</label>
-            <input type="text" [(ngModel)]="fCategoria"
-                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            <app-multi-select
+                [options]="svc.opciones().categorias"
+                placeholder="Todas las categorías"
+                [(value)]="fCategorias" />
         </div>
     </app-filter-bar>
+
+    <!-- Métricas -->
+    @if (svc.metricas(); as m) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Total PVP en stock</p>
+            <p class="text-3xl font-bold text-gray-800">${{ m.total_pvp | number:'1.0-0' }}</p>
+            <p class="text-xs text-gray-400">Suma precio PVP de items filtrados</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Items en stock</p>
+            <p class="text-3xl font-bold text-gray-800">{{ m.total_items | number }}</p>
+            <p class="text-xs text-gray-400">Cantidad de referencias filtradas</p>
+        </div>
+
+    </div>
+    }
 
     <!-- Tabla -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -69,7 +96,10 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Descripción</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Marca</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Fábrica</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Stock</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer select-none hover:text-brand transition-colors"
+                        (click)="setOrdering('stock_act_bod')">
+                        Stock <i class="ml-1 text-[10px]" [class]="stockSortIcon()"></i>
+                    </th>
                     <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">PVP $</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Acciones</th>

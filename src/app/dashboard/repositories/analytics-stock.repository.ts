@@ -7,12 +7,27 @@ export interface StockFilter {
     page?: number;
     page_size?: number;
     search?: string;
-    marca?: string;
-    fabrica?: string;
-    estado_stock?: string;
-    categoria?: string;
+    marcas?: string[];
+    fabricas?: string[];
+    estados?: string[];
+    categorias?: string[];
     linea?: string;
+    ordering?: string;
 }
+
+export interface StockOpciones {
+    marcas: string[];
+    fabricas: string[];
+    estados: string[];
+    categorias: string[];
+}
+
+export interface StockMetricas {
+    total_pvp: number;
+    total_items: number;
+}
+
+export type StockMetricasFilter = Pick<StockFilter, 'marcas' | 'fabricas' | 'estados' | 'categorias' | 'search'>;
 
 @Injectable({ providedIn: 'root' })
 export class AnalyticsStockRepository {
@@ -21,15 +36,30 @@ export class AnalyticsStockRepository {
 
     list(f: StockFilter = {}): Observable<any> {
         let p = new HttpParams();
-        if (f.page)         p = p.set('page', f.page);
-        if (f.page_size)    p = p.set('page_size', f.page_size);
-        if (f.search)       p = p.set('search', f.search);
-        if (f.marca)        p = p.set('marca', f.marca);
-        if (f.fabrica)      p = p.set('fabrica', f.fabrica);
-        if (f.estado_stock) p = p.set('estado_stock', f.estado_stock);
-        if (f.categoria)    p = p.set('categoria', f.categoria);
-        if (f.linea)        p = p.set('linea', f.linea);
+        if (f.page)      p = p.set('page', f.page);
+        if (f.page_size) p = p.set('page_size', f.page_size);
+        if (f.search)    p = p.set('search', f.search);
+        if (f.linea)     p = p.set('linea', f.linea);
+        if (f.ordering)  p = p.set('ordering', f.ordering);
+        f.marcas?.forEach(v =>     { p = p.append('marca', v); });
+        f.fabricas?.forEach(v =>   { p = p.append('fabrica', v); });
+        f.estados?.forEach(v =>    { p = p.append('estado_stock', v); });
+        f.categorias?.forEach(v => { p = p.append('categoria', v); });
         return this.http.get(`${this.BASE}/`, { params: p });
+    }
+
+    getOpciones(): Observable<StockOpciones> {
+        return this.http.get<StockOpciones>(`${this.BASE}/opciones/`);
+    }
+
+    getMetricas(f: StockMetricasFilter = {}): Observable<StockMetricas> {
+        let p = new HttpParams();
+        if (f.search) p = p.set('search', f.search);
+        f.marcas?.forEach(v =>     { p = p.append('marca', v); });
+        f.fabricas?.forEach(v =>   { p = p.append('fabrica', v); });
+        f.estados?.forEach(v =>    { p = p.append('estado_stock', v); });
+        f.categorias?.forEach(v => { p = p.append('categoria', v); });
+        return this.http.get<StockMetricas>(`${this.BASE}/metricas/`, { params: p });
     }
 
     getById(id: number): Observable<any> {

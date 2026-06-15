@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { AnalyticsStockRepository, StockFilter } from '../../repositories/analytics-stock.repository';
+import { AnalyticsStockRepository, StockFilter, StockMetricas, StockMetricasFilter, StockOpciones } from '../../repositories/analytics-stock.repository';
 
 @Injectable({ providedIn: 'root' })
 export class StockService {
@@ -10,10 +10,26 @@ export class StockService {
     readonly loading  = signal(false);
     readonly error    = signal<string | null>(null);
     readonly success  = signal<string | null>(null);
+    readonly opciones  = signal<StockOpciones>({ marcas: [], fabricas: [], estados: [], categorias: [] });
+    readonly metricas  = signal<StockMetricas | null>(null);
 
     private clear(): void {
         this.error.set(null);
         this.success.set(null);
+    }
+
+    loadOpciones(): void {
+        this.repo.getOpciones().subscribe({
+            next: (res) => this.opciones.set(res),
+            error: () => {},
+        });
+    }
+
+    loadMetricas(f: StockMetricasFilter = {}): void {
+        this.repo.getMetricas(f).subscribe({
+            next: (res) => this.metricas.set(res),
+            error: () => {},
+        });
     }
 
     load(f: StockFilter = {}): void {

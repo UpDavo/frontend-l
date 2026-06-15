@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { AnalyticsVentasRepository, VentasFilter } from '../../repositories/analytics-ventas.repository';
+import { AnalyticsVentasRepository, MetricasFilter, VentaMetricas, VentasFilter } from '../../repositories/analytics-ventas.repository';
 
 @Injectable({ providedIn: 'root' })
 export class VentasService {
@@ -10,10 +10,26 @@ export class VentasService {
     readonly loading  = signal(false);
     readonly error    = signal<string | null>(null);
     readonly success  = signal<string | null>(null);
+    readonly ciudades  = signal<string[]>([]);
+    readonly metricas  = signal<VentaMetricas | null>(null);
 
     private clear(): void {
         this.error.set(null);
         this.success.set(null);
+    }
+
+    loadCiudades(): void {
+        this.repo.getCiudades().subscribe({
+            next: (res) => this.ciudades.set(res),
+            error: () => {},
+        });
+    }
+
+    loadMetricas(f: MetricasFilter = {}): void {
+        this.repo.getMetricas(f).subscribe({
+            next: (res) => this.metricas.set(res),
+            error: () => {},
+        });
     }
 
     load(f: VentasFilter = {}): void {

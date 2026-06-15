@@ -9,7 +9,7 @@
     }
 
     <!-- Filtros -->
-    <app-filter-bar [isLoading]="svc.loading()" [cols]="4" [hasActions]="true"
+    <app-filter-bar [isLoading]="svc.loading()" [cols]="5" [hasActions]="true"
         (search)="search()" (clear)="reset()">
         <div actions>
             <button (click)="openCreate()"
@@ -23,24 +23,11 @@
                 class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
         </div>
         <div>
-            <label class="block text-xs text-gray-500 mb-1">Año</label>
-            <input type="number" [(ngModel)]="fAño" placeholder="2024"
-                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
-        </div>
-        <div>
-            <label class="block text-xs text-gray-500 mb-1">Mes</label>
-            <select [(ngModel)]="fMes"
-                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
-                <option value="">Todos</option>
-                @for (m of [1,2,3,4,5,6,7,8,9,10,11,12]; track m) {
-                <option [value]="m">{{ m }}</option>
-                }
-            </select>
-        </div>
-        <div>
             <label class="block text-xs text-gray-500 mb-1">Ciudad</label>
-            <input type="text" [(ngModel)]="fCiudad" placeholder="Quito, Guayaquil..."
-                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            <app-multi-select
+                [options]="svc.ciudades()"
+                placeholder="Todas las ciudades"
+                [(value)]="fCiudades" />
         </div>
         <div>
             <label class="block text-xs text-gray-500 mb-1">Item</label>
@@ -58,6 +45,58 @@
                 class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
         </div>
     </app-filter-bar>
+
+    <!-- Métricas -->
+    @if (svc.metricas(); as m) {
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        <!-- Total período -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Total período</p>
+            <p class="text-3xl font-bold text-gray-800">
+                ${{ m.total_actual | number:'1.0-0' }}
+            </p>
+            <p class="text-xs text-gray-400">
+                {{ m.periodo_actual.desde }} — {{ m.periodo_actual.hasta }}
+            </p>
+        </div>
+
+        <!-- Comparativa año anterior -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Mismo período año anterior</p>
+            <p class="text-3xl font-bold text-gray-800">
+                ${{ m.total_anio_anterior | number:'1.0-0' }}
+            </p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+                @if (m.variacion_pct !== null) {
+                    <span class="inline-flex items-center gap-0.5 text-sm font-semibold"
+                        [class.text-emerald-600]="m.variacion_pct >= 0"
+                        [class.text-red-500]="m.variacion_pct < 0">
+                        <i class="pi text-xs"
+                            [class.pi-arrow-up-right]="m.variacion_pct >= 0"
+                            [class.pi-arrow-down-right]="m.variacion_pct < 0"></i>
+                        {{ m.variacion_pct >= 0 ? '+' : '' }}{{ m.variacion_pct }}%
+                    </span>
+                    <span class="text-xs text-gray-400">vs año anterior</span>
+                } @else {
+                    <span class="text-xs text-gray-400">Sin datos del año anterior</span>
+                }
+            </div>
+        </div>
+
+        <!-- Primer año de datos -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-1">
+            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Datos históricos desde</p>
+            @if (m.anio_primer_registro) {
+                <p class="text-3xl font-bold text-gray-800">{{ m.anio_primer_registro }}</p>
+                <p class="text-xs text-gray-400">Primer registro de ventas</p>
+            } @else {
+                <p class="text-3xl font-bold text-gray-400">—</p>
+            }
+        </div>
+
+    </div>
+    }
 
     <!-- Tabla -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

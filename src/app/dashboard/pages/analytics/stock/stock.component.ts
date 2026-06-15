@@ -7,6 +7,7 @@ import { FilterBarComponent } from '../../../../shared/components/filter-bar/fil
 import { AlertBannerComponent } from '../../../../shared/components/alert-banner/alert-banner.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { MultiSelectComponent } from '../../../../shared/components/multi-select/multi-select.component';
 
 const PAGE_SIZE = 10;
 
@@ -17,6 +18,7 @@ const PAGE_SIZE = 10;
         CommonModule, FormsModule,
         ServerTableComponent, FilterBarComponent,
         AlertBannerComponent, FormDialogComponent, ConfirmDialogComponent,
+        MultiSelectComponent,
     ],
     templateUrl: './stock.component.html',
 })
@@ -24,11 +26,12 @@ export class StockComponent implements OnInit {
     readonly svc = inject(StockService);
 
     // ── Filtros ───────────────────────────────────────────────────
-    fSearch      = '';
-    fMarca       = '';
-    fFabrica     = '';
-    fEstado      = '';
-    fCategoria   = '';
+    fSearch:     string   = '';
+    fMarcas:     string[] = [];
+    fFabricas:   string[] = [];
+    fEstados:    string[] = [];
+    fCategorias: string[] = [];
+    fOrdering:   string   = '';
 
     // ── Paginación ────────────────────────────────────────────────
     page         = signal(1);
@@ -47,26 +50,46 @@ export class StockComponent implements OnInit {
     showDelete   = false;
     deletingRow: any = null;
 
-    ngOnInit(): void { this.loadData(); }
+    ngOnInit(): void { this.svc.loadOpciones(); this.loadData(); }
 
     private buildFilter() {
         return {
-            page: this.page(), page_size: this.pageSize(),
-            search:      this.fSearch    || undefined,
-            marca:       this.fMarca     || undefined,
-            fabrica:     this.fFabrica   || undefined,
-            estado_stock: this.fEstado   || undefined,
-            categoria:   this.fCategoria || undefined,
+            page:       this.page(),
+            page_size:  this.pageSize(),
+            search:     this.fSearch              || undefined,
+            marcas:     this.fMarcas.length     ? this.fMarcas     : undefined,
+            fabricas:   this.fFabricas.length   ? this.fFabricas   : undefined,
+            estados:    this.fEstados.length    ? this.fEstados    : undefined,
+            categorias: this.fCategorias.length ? this.fCategorias : undefined,
+            ordering:   this.fOrdering            || undefined,
         };
     }
 
-    loadData(): void { this.svc.load(this.buildFilter()); }
+    private buildMetricasFilter() {
+        return {
+            search:     this.fSearch              || undefined,
+            marcas:     this.fMarcas.length     ? this.fMarcas     : undefined,
+            fabricas:   this.fFabricas.length   ? this.fFabricas   : undefined,
+            estados:    this.fEstados.length    ? this.fEstados    : undefined,
+            categorias: this.fCategorias.length ? this.fCategorias : undefined,
+        };
+    }
+
+    loadData(): void {
+        this.svc.load(this.buildFilter());
+        this.svc.loadMetricas(this.buildMetricasFilter());
+    }
 
     search(): void { this.page.set(1); this.loadData(); }
 
     reset(): void {
-        this.fSearch = ''; this.fMarca = ''; this.fFabrica = '';
-        this.fEstado = ''; this.fCategoria = '';
+        this.fSearch = ''; this.fMarcas = []; this.fFabricas = [];
+        this.fEstados = []; this.fCategorias = []; this.fOrdering = '';
+        this.page.set(1); this.loadData();
+    }
+
+    setOrdering(value: string): void {
+        this.fOrdering = this.fOrdering === value ? `-${value}` : value;
         this.page.set(1); this.loadData();
     }
 
@@ -117,4 +140,10 @@ export class StockComponent implements OnInit {
     }
 
     get formValid(): boolean { return !!this.form.item?.trim(); }
+
+    stockSortIcon(): string {
+        if (this.fOrdering === 'stock_act_bod')  return 'pi pi-arrow-up';
+        if (this.fOrdering === '-stock_act_bod') return 'pi pi-arrow-down';
+        return 'pi pi-sort';
+    }
 }

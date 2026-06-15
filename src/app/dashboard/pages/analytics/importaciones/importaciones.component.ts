@@ -7,8 +7,17 @@ import { FilterBarComponent } from '../../../../shared/components/filter-bar/fil
 import { AlertBannerComponent } from '../../../../shared/components/alert-banner/alert-banner.component';
 import { FormDialogComponent } from '../../../../shared/components/form-dialog/form-dialog.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { MultiSelectComponent } from '../../../../shared/components/multi-select/multi-select.component';
 
 const PAGE_SIZE = 10;
+
+function currentMonthRange(): { desde: string; hasta: string } {
+    const now  = new Date();
+    const y    = now.getFullYear();
+    const m    = now.getMonth();
+    const fmt  = (d: Date) => d.toISOString().slice(0, 10);
+    return { desde: fmt(new Date(y, m, 1)), hasta: fmt(new Date(y, m + 1, 0)) };
+}
 
 @Component({
     selector: 'app-importaciones',
@@ -17,6 +26,7 @@ const PAGE_SIZE = 10;
         CommonModule, FormsModule,
         ServerTableComponent, FilterBarComponent,
         AlertBannerComponent, FormDialogComponent, ConfirmDialogComponent,
+        MultiSelectComponent,
     ],
     templateUrl: './importaciones.component.html',
 })
@@ -24,21 +34,20 @@ export class ImportacionesComponent implements OnInit {
     readonly svc = inject(ImportacionesService);
 
     // ── Filtros ───────────────────────────────────────────────────
-    fSearch         = '';
-    fAño            = '';
-    fImportador     = '';
-    fPaisOrigen     = '';
-    fMarca          = '';
-    fFechaDesde     = '';
-    fFechaHasta     = '';
+    fSearch:        string   = '';
+    fImportadores:  string[] = [];
+    fPaisesOrigen:  string[] = [];
+    fMarcas:        string[] = [];
+    fFechaDesde:    string   = currentMonthRange().desde;
+    fFechaHasta:    string   = currentMonthRange().hasta;
 
     // ── Paginación ────────────────────────────────────────────────
-    page         = signal(1);
-    pageSize     = signal(PAGE_SIZE);
-    totalPages   = computed(() => Math.max(1, Math.ceil(this.svc.total() / this.pageSize())));
+    page       = signal(1);
+    pageSize   = signal(PAGE_SIZE);
+    totalPages = computed(() => Math.max(1, Math.ceil(this.svc.total() / this.pageSize())));
 
     // ── Form ──────────────────────────────────────────────────────
-    showForm     = false;
+    showForm   = false;
     editingId: number | null = null;
     form = {
         fecha: '', importador: '', exportador: '', descripcion_comercial: '',
@@ -49,29 +58,42 @@ export class ImportacionesComponent implements OnInit {
     showDelete   = false;
     deletingRow: any = null;
 
-    ngOnInit(): void { this.loadData(); }
+    ngOnInit(): void { this.svc.loadOpciones(); this.loadData(); }
 
     private buildFilter() {
         return {
-            page: this.page(), page_size: this.pageSize(),
-            search:          this.fSearch      || undefined,
-            año:             this.fAño         || undefined,
-            importador:      this.fImportador  || undefined,
-            pais_origen:     this.fPaisOrigen  || undefined,
-            marca:           this.fMarca       || undefined,
-            fecha_desde:     this.fFechaDesde  || undefined,
-            fecha_hasta:     this.fFechaHasta  || undefined,
+            page:          this.page(),
+            page_size:     this.pageSize(),
+            search:        this.fSearch                  || undefined,
+            importadores:  this.fImportadores.length  ? this.fImportadores  : undefined,
+            paises_origen: this.fPaisesOrigen.length  ? this.fPaisesOrigen  : undefined,
+            marcas:        this.fMarcas.length         ? this.fMarcas        : undefined,
+            fecha_desde:   this.fFechaDesde             || undefined,
+            fecha_hasta:   this.fFechaHasta             || undefined,
         };
     }
 
-    loadData(): void { this.svc.load(this.buildFilter()); }
+    private buildMetricasFilter() {
+        return {
+            importadores:  this.fImportadores.length  ? this.fImportadores  : undefined,
+            paises_origen: this.fPaisesOrigen.length  ? this.fPaisesOrigen  : undefined,
+            marcas:        this.fMarcas.length         ? this.fMarcas        : undefined,
+            fecha_desde:   this.fFechaDesde             || undefined,
+            fecha_hasta:   this.fFechaHasta             || undefined,
+        };
+    }
+
+    loadData(): void {
+        this.svc.load(this.buildFilter());
+        this.svc.loadMetricas(this.buildMetricasFilter());
+    }
 
     search(): void { this.page.set(1); this.loadData(); }
 
     reset(): void {
-        this.fSearch = ''; this.fAño = ''; this.fImportador = '';
-        this.fPaisOrigen = ''; this.fMarca = '';
-        this.fFechaDesde = ''; this.fFechaHasta = '';
+        const { desde, hasta } = currentMonthRange();
+        this.fSearch = ''; this.fImportadores = []; this.fPaisesOrigen = [];
+        this.fMarcas = []; this.fFechaDesde = desde; this.fFechaHasta = hasta;
         this.page.set(1); this.loadData();
     }
 

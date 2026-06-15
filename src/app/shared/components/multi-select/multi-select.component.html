@@ -1,0 +1,93 @@
+<div class="relative">
+
+    <!-- Trigger -->
+    <div
+        (click)="toggleOpen()"
+        class="min-h-[38px] w-full border rounded-xl px-3 py-1.5 text-sm cursor-pointer flex flex-wrap gap-1.5 items-center bg-white transition-shadow"
+        [class.border-brand]="isOpen()"
+        [class.ring-2]="isOpen()"
+        [class.ring-brand]="isOpen()"
+        [class.ring-opacity-30]="isOpen()"
+        [class.border-gray-200]="!isOpen()">
+
+        @if (value().length === 0) {
+            <span class="text-gray-400 select-none">{{ placeholder() }}</span>
+        }
+
+        @for (v of value(); track v) {
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-brand/10 text-brand text-xs rounded-lg font-medium">
+                {{ v }}
+                <button type="button" (click)="remove(v, $event)"
+                    class="hover:text-brand-dark transition-colors leading-none">
+                    <i class="pi pi-times text-[9px]"></i>
+                </button>
+            </span>
+        }
+
+        <i class="pi ml-auto text-gray-400 text-xs flex-shrink-0"
+           [class.pi-chevron-up]="isOpen()"
+           [class.pi-chevron-down]="!isOpen()"></i>
+    </div>
+
+    <!-- Dropdown -->
+    @if (isOpen()) {
+    <div class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+
+        <!-- Search -->
+        <div class="p-2 border-b border-gray-100">
+            <div class="relative">
+                <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                <input
+                    type="text"
+                    [ngModel]="searchQuery()"
+                    (ngModelChange)="searchQuery.set($event)"
+                    placeholder="Buscar..."
+                    (click)="$event.stopPropagation()"
+                    class="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                    autofocus />
+            </div>
+        </div>
+
+        <!-- Options list -->
+        <div class="max-h-52 overflow-y-auto py-1">
+            @if (filtered().length === 0) {
+                <p class="px-3 py-3 text-sm text-gray-400 text-center">Sin resultados</p>
+            }
+            @for (opt of filtered(); track opt) {
+                <div
+                    (click)="toggle(opt)"
+                    class="px-3 py-2 text-sm cursor-pointer flex items-center gap-2.5 transition-colors"
+                    [class.bg-brand]="isSelected(opt)"
+                    [class.text-white]="isSelected(opt)"
+                    [class.hover:bg-brand-dark]="isSelected(opt)"
+                    [class.hover:bg-gray-50]="!isSelected(opt)">
+
+                    <span
+                        class="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors"
+                        [class.bg-white]="isSelected(opt)"
+                        [class.border-white]="isSelected(opt)"
+                        [class.border-gray-300]="!isSelected(opt)">
+                        @if (isSelected(opt)) {
+                            <i class="pi pi-check text-brand text-[9px] font-bold"></i>
+                        }
+                    </span>
+
+                    <span class="truncate">{{ opt }}</span>
+                </div>
+            }
+        </div>
+
+        <!-- Footer -->
+        @if (value().length > 0) {
+        <div class="border-t border-gray-100 px-3 py-1.5 flex items-center justify-between">
+            <span class="text-xs text-gray-400">{{ value().length }} seleccionado{{ value().length !== 1 ? 's' : '' }}</span>
+            <button type="button" (click)="clearAll($event)"
+                class="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                Limpiar todo
+            </button>
+        </div>
+        }
+    </div>
+    }
+
+</div>
