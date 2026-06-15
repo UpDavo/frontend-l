@@ -1,0 +1,505 @@
+<div class="flex flex-col gap-5">
+
+    <!-- Alertas -->
+    @if (svc.error()) {
+    <app-alert-banner type="error" [message]="svc.error()" (dismissed)="svc.error.set(null)" />
+    }
+
+    <!-- Filtros -->
+    <app-filter-bar [isLoading]="loading()" [cols]="5" (search)="loadAll()" (clear)="reset()">
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Ciudad</label>
+            <app-multi-select [options]="ciudadesOpciones()" placeholder="Todas las ciudades" [(value)]="fCiudades" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Datos desde año</label>
+            <input type="number" [(ngModel)]="fAnioInicio" min="2018" [max]="2026"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Actividad reciente</label>
+            <select [(ngModel)]="fAniosReciente"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 bg-white">
+                <option [value]="0.08">Solo este año</option>
+                <option [value]="1">Último año</option>
+                <option [value]="2">Últimos 2 años</option>
+                <option [value]="3">Últimos 3 años</option>
+                <option [value]="5">Últimos 5 años</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Top productos</label>
+            <input type="number" [(ngModel)]="fTopN" min="5" max="50"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Meses a proyectar</label>
+            <input type="number" [(ngModel)]="fMesesProyeccion" min="1" max="12"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+    </app-filter-bar>
+
+    <!-- ─── HEATMAP ─────────────────────────────────────────── -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div class="mb-4">
+            <h2 class="text-base font-semibold text-gray-700">Mapa de Calor — Movimiento por Día y Mes</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Intensidad de ventas histórica (unidades vendidas). Más oscuro = más movimiento.</p>
+        </div>
+
+        @if (svc.loadingHeatmap()) {
+        <div class="flex items-center justify-center h-40 text-gray-400">
+            <i class="pi pi-spin pi-spinner text-2xl mr-2"></i> Calculando...
+        </div>
+        } @else if (svc.heatmap().length === 0) {
+        <div class="flex flex-col items-center justify-center h-40 text-gray-400 gap-2">
+            <i class="pi pi-calendar text-3xl"></i>
+            <p class="text-sm">Sin datos disponibles</p>
+        </div>
+        } @else {
+
+        <!-- Leyenda de escala -->
+        <div class="flex items-center gap-2 mb-4 text-xs text-gray-500">
+            <span>Menos</span>
+            <div class="flex gap-0.5">
+                <div class="w-4 h-4 rounded bg-gray-100"></div>
+                <div class="w-4 h-4 rounded bg-violet-100"></div>
+                <div class="w-4 h-4 rounded bg-violet-200"></div>
+                <div class="w-4 h-4 rounded bg-violet-300"></div>
+                <div class="w-4 h-4 rounded bg-violet-400"></div>
+                <div class="w-4 h-4 rounded bg-violet-500"></div>
+                <div class="w-4 h-4 rounded bg-violet-600"></div>
+                <div class="w-4 h-4 rounded bg-violet-700"></div>
+            </div>
+            <span>Más</span>
+        </div>
+
+        <!-- Grid heatmap -->
+        <div class="overflow-x-auto">
+            <table class="w-full border-separate border-spacing-1">
+                <thead>
+                    <tr>
+                        <th class="text-xs text-gray-400 font-medium text-left pr-3 w-10"></th>
+                        @for (mes of meses; track mes) {
+                        <th class="text-xs text-gray-400 font-medium text-center w-14">{{ mes }}</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (dia of dias; track dia; let di = $index) {
+                    <tr>
+                        <td class="text-xs text-gray-500 font-medium pr-3 text-right whitespace-nowrap">{{ dia }}</td>
+                        @for (mes of meses; track mes; let mi = $index) {
+                            @let cell = heatmapMatrix()[di][mi];
+                            <td class="p-0">
+                                @if (cell) {
+                                <div [class]="'w-14 h-10 rounded-lg flex items-center justify-center cursor-default transition-transform hover:scale-110 ' + intensidadClass(cell.intensidad)"
+                                    [title]="dia + ' · ' + cell.mes_nombre + '\n' + (cell.total_cantidad | number) + ' uds · $' + (cell.total_neto | number:'1.0-0')">
+                                    <span class="text-xs font-semibold"
+                                        [class.text-white]="cell.intensidad >= 0.45"
+                                        [class.text-violet-900]="cell.intensidad < 0.45">
+                                        {{ cell.total_cantidad >= 1000
+                                            ? (cell.total_cantidad / 1000 | number:'1.0-1') + 'k'
+                                            : (cell.total_cantidad | number) }}
+                                    </span>
+                                </div>
+                                } @else {
+                                <div class="w-14 h-10 rounded-lg bg-gray-50"></div>
+                                }
+                            </td>
+                        }
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        }
+    </div>
+
+    <!-- ─── PRONÓSTICO CARDS ────────────────────────────────── -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+
+        <!-- Header con toggle y KPI global -->
+        <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-base font-semibold text-gray-700">Top {{ fTopN }} Productos — Pronóstico</h2>
+                <p class="text-xs text-gray-400 mt-0.5">
+                    Regresión lineal · ordenado por rentabilidad proyectada ·
+                    @if (svc.pronostico().length) {
+                    <span class="text-violet-600 font-medium">Total periodo: ${{ totalRevenueGlobal() | number:'1.0-0' }}</span>
+                    }
+                </p>
+            </div>
+            <!-- Toggle Unidades / Dinero -->
+            <div class="flex rounded-xl overflow-hidden border border-gray-200 text-xs font-semibold">
+                <button
+                    (click)="viewMode.set('dinero')"
+                    [class.bg-brand]="viewMode() === 'dinero'"
+                    [class.text-white]="viewMode() === 'dinero'"
+                    [class.text-gray-500]="viewMode() !== 'dinero'"
+                    class="px-3 py-1.5 transition-colors">
+                    <i class="pi pi-dollar text-xs mr-1"></i>Dinero
+                </button>
+                <button
+                    (click)="viewMode.set('unidades')"
+                    [class.bg-brand]="viewMode() === 'unidades'"
+                    [class.text-white]="viewMode() === 'unidades'"
+                    [class.text-gray-500]="viewMode() !== 'unidades'"
+                    class="px-3 py-1.5 transition-colors border-l border-gray-200">
+                    <i class="pi pi-box text-xs mr-1"></i>Unidades
+                </button>
+            </div>
+        </div>
+
+        @if (svc.loadingProno()) {
+        <div class="flex items-center justify-center h-40 text-gray-400">
+            <i class="pi pi-spin pi-spinner text-2xl mr-2"></i> Calculando pronósticos...
+        </div>
+        } @else if (svc.pronostico().length === 0) {
+        <div class="flex flex-col items-center justify-center h-40 text-gray-400 gap-2">
+            <i class="pi pi-chart-line text-3xl"></i>
+            <p class="text-sm">Sin datos suficientes para proyectar</p>
+        </div>
+        } @else {
+
+        <!-- Selector de mes -->
+        <div class="px-4 pt-3 pb-1 flex flex-wrap gap-1.5 items-center">
+            <span class="text-xs text-gray-400 mr-1">Ver mes:</span>
+            @for (h of pronosticoHeaders(); track h.label; let hi = $index) {
+            <button
+                (click)="mesSelIdx.set(hi)"
+                class="px-3 py-1 rounded-full text-xs font-semibold transition-colors border"
+                [class.border-brand]="mesSelIdx() === hi"
+                [class.bg-brand]="mesSelIdx() === hi"
+                [class.text-white]="mesSelIdx() === hi"
+                [class.border-transparent]="mesSelIdx() !== hi"
+                [class.bg-emerald-100]="mesSelIdx() !== hi && h.tipo === 'historico'"
+                [class.text-emerald-700]="mesSelIdx() !== hi && h.tipo === 'historico'"
+                [class.bg-amber-100]="mesSelIdx() !== hi && h.tipo === 'actual'"
+                [class.text-amber-700]="mesSelIdx() !== hi && h.tipo === 'actual'"
+                [class.bg-gray-100]="mesSelIdx() !== hi && h.tipo === 'proyeccion'"
+                [class.text-gray-500]="mesSelIdx() !== hi && h.tipo === 'proyeccion'">
+                @if (h.tipo === 'historico') { <i class="pi pi-check-circle text-xs mr-0.5"></i> }
+                @if (h.tipo === 'actual') { <i class="pi pi-clock text-xs mr-0.5"></i> }
+                @if (h.tipo === 'proyeccion') { <i class="pi pi-sparkles text-xs mr-0.5"></i> }
+                {{ h.label }}
+            </button>
+            }
+        </div>
+
+        <!-- Summary cards (datos globales, no filtrados a top-N) -->
+        @if (summaryMes(); as sm) {
+        <div class="px-4 pb-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+            <!-- Card 1: Ventas reales vs Proyectado del modelo -->
+            <div class="border border-gray-100 rounded-2xl p-4">
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">
+                    {{ sm.mesNombreSel }} {{ sm.anioSel }} — Ventas Totales
+                </p>
+
+                @if (sm.tipo !== 'proyeccion') {
+                <p class="text-2xl font-bold text-gray-800 mb-1.5">
+                    @if (viewMode() === 'dinero') { ${{ sm.totalReal | number:'1.0-0' }} }
+                    @else { {{ sm.totalReal | number }} uds }
+                </p>
+                <p class="text-xs text-gray-400">
+                    Proyectado modelo (top {{ fTopN }}):
+                    <span class="font-medium text-violet-600">
+                        @if (viewMode() === 'dinero') { ${{ sm.totalProy | number:'1.0-0' }} }
+                        @else { {{ sm.totalProy | number }} uds }
+                    </span>
+                </p>
+                } @else {
+                <p class="text-2xl font-bold text-violet-700 mb-1.5">
+                    @if (viewMode() === 'dinero') { ${{ sm.totalProy | number:'1.0-0' }} }
+                    @else { {{ sm.totalProy | number }} uds }
+                </p>
+                <p class="text-xs text-gray-400">Proyección modelo (top {{ fTopN }}) — sin ventas reales aún</p>
+                }
+            </div>
+
+            <!-- Card 2: vs mismo mes año anterior (todos los productos) -->
+            <div class="border border-gray-100 rounded-2xl p-4">
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">
+                    {{ sm.mesNombreSel }} {{ sm.anioSel }} — vs Año Anterior
+                </p>
+
+                @if (sm.tipo !== 'proyeccion' && sm.totalAnterior > 0) {
+                <div class="flex items-end gap-2 mb-1.5">
+                    <p class="text-2xl font-bold text-gray-800">
+                        @if (viewMode() === 'dinero') { ${{ sm.totalReal | number:'1.0-0' }} }
+                        @else { {{ sm.totalReal | number }} uds }
+                    </p>
+                    @if (sm.pctVsAnterior !== null) {
+                    <span class="text-sm font-bold mb-0.5"
+                        [class.text-emerald-600]="sm.pctVsAnterior >= 0"
+                        [class.text-red-500]="sm.pctVsAnterior < 0">
+                        {{ sm.pctVsAnterior >= 0 ? '+' : '' }}{{ sm.pctVsAnterior }}%
+                    </span>
+                    }
+                </div>
+                <p class="text-xs text-gray-400">
+                    {{ sm.mesNombreSel }} {{ sm.anioSel - 1 }}:
+                    <span class="font-medium text-gray-600">
+                        @if (viewMode() === 'dinero') { ${{ sm.totalAnterior | number:'1.0-0' }} }
+                        @else { {{ sm.totalAnterior | number }} uds }
+                    </span>
+                </p>
+                } @else if (sm.tipo !== 'proyeccion') {
+                <p class="text-2xl font-bold text-gray-800 mb-1.5">
+                    @if (viewMode() === 'dinero') { ${{ sm.totalReal | number:'1.0-0' }} }
+                    @else { {{ sm.totalReal | number }} uds }
+                </p>
+                <p class="text-xs text-gray-400">Sin datos del año anterior para comparar</p>
+                } @else {
+                <div class="flex items-center h-16 text-gray-300">
+                    <p class="text-sm">Mes futuro — sin datos reales</p>
+                </div>
+                }
+            </div>
+
+        </div>
+        }
+
+        <!-- Cards grid -->
+        <div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            @for (item of pronosticoOrdenado(); track item.item; let idx = $index) {
+            @let proxVal = viewMode() === 'dinero'
+                ? (item.proyecciones[mesSelIdx()]?.total_proyectado ?? 0)
+                : (item.proyecciones[mesSelIdx()]?.cantidad_proyectada ?? 0);
+
+            <div class="border border-gray-100 rounded-2xl p-4 flex flex-col gap-2.5 hover:border-brand/30 hover:shadow-sm transition-all">
+
+                <!-- Rank + tendencia -->
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-gray-400">#{{ idx + 1 }}</span>
+                    <span class="inline-flex items-center gap-0.5 text-xs font-semibold" [class]="tendenciaClass(item.tendencia)">
+                        <i [class]="tendenciaIcon(item.tendencia) + ' text-xs'"></i>
+                        {{ item.tendencia | titlecase }}
+                    </span>
+                </div>
+
+                <!-- Descripción -->
+                <div class="min-h-8">
+                    <p class="text-sm font-semibold text-gray-800 leading-tight line-clamp-2"
+                        [title]="item.descripcion || item.desc_repuesto">
+                        {{ item.descripcion || item.desc_repuesto || item.item }}
+                    </p>
+                    <p class="text-xs text-gray-400 font-mono mt-0.5">{{ item.item }}</p>
+                </div>
+
+                <!-- Valor mes seleccionado -->
+                <div>
+                    <p class="text-xs text-gray-400 mb-0.5">
+                        {{ pronosticoHeaders()[mesSelIdx()]?.label ?? 'Próx. mes' }}
+                        @if (tipoMesSel() !== 'proyeccion') { — proyectado }
+                    </p>
+                    <p class="text-2xl font-bold text-violet-700">
+                        @if (viewMode() === 'dinero') { ${{ proxVal | number:'1.0-0' }} }
+                        @else { {{ proxVal | number }} uds }
+                    </p>
+                </div>
+
+                <!-- Comparativa real vs proyectado (solo meses históricos/actuales) -->
+                @if (tipoMesSel() !== 'proyeccion') {
+                @let pct = cumplimientoPct(item);
+                @let realV = realValor(item);
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-400">Real:
+                            <span class="font-semibold text-gray-700">
+                                @if (viewMode() === 'dinero') { ${{ realV | number:'1.0-0' }} }
+                                @else { {{ realV | number }} uds }
+                            </span>
+                        </span>
+                        @if (pct !== null) {
+                        <span class="font-bold"
+                            [class.text-emerald-600]="pct >= 100"
+                            [class.text-amber-500]="pct >= 60 && pct < 100"
+                            [class.text-red-500]="pct < 60">
+                            {{ pct }}%
+                        </span>
+                        }
+                    </div>
+                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        @if (pct !== null) {
+                        <div class="h-full rounded-full transition-all"
+                            [style.width.%]="pct > 100 ? 100 : pct"
+                            [class.bg-emerald-400]="pct >= 100"
+                            [class.bg-amber-400]="pct >= 60 && pct < 100"
+                            [class.bg-red-400]="pct < 60"></div>
+                        }
+                    </div>
+                </div>
+                } @else {
+                <!-- Barra relativa entre productos (solo en proyecciones) -->
+                <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-violet-400 rounded-full transition-all"
+                        [style.width.%]="barWidth(item, maxProxMes())"></div>
+                </div>
+                }
+
+                <!-- Footer: precio unit + R² + botón -->
+                <div class="flex items-center justify-between pt-1 border-t border-gray-50">
+                    <div class="text-xs text-gray-400">
+                        <span>Unit: <span class="font-medium text-gray-600">${{ item.precio_unit_promedio | number:'1.2-2' }}</span></span>
+                        <span class="mx-1.5">·</span>
+                        <span>R² <span class="font-medium"
+                            [class.text-emerald-600]="item.r2 >= 0.7"
+                            [class.text-amber-500]="item.r2 >= 0.4 && item.r2 < 0.7"
+                            [class.text-gray-400]="item.r2 < 0.4">{{ item.r2 | number:'1.2-2' }}</span></span>
+                    </div>
+                    <button (click)="openDetail(item)" title="Ver detalle"
+                        class="p-1 text-brand hover:bg-brand/10 rounded-lg transition-colors">
+                        <i class="pi pi-eye text-sm"></i>
+                    </button>
+                </div>
+
+            </div>
+            }
+        </div>
+
+        <!-- Footer leyenda -->
+        <div class="px-5 py-3 border-t border-gray-50 bg-gray-50/50">
+            <p class="text-xs text-gray-400">
+                Primer badge resaltado = próximo mes ·
+                <span class="text-emerald-600 font-medium">R² ≥ 0.70</span> alta confiabilidad ·
+                <span class="text-amber-500 font-medium">0.40–0.70</span> moderada ·
+                <span class="text-gray-400 font-medium">&lt;0.40</span> baja
+            </p>
+        </div>
+
+        }
+    </div>
+
+</div>
+
+<!-- ─── MODAL DETALLE ─────────────────────────────────────── -->
+@if (showDetail && selectedItem()) {
+@let it = selectedItem()!;
+<p-dialog
+    [visible]="showDetail"
+    (visibleChange)="showDetail = false"
+    [modal]="true"
+    [closable]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '95vw', maxWidth: '680px' }"
+    [showHeader]="false">
+
+    <div class="flex flex-col gap-5 py-2">
+
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-mono text-gray-400 mb-0.5">{{ it.item }}</p>
+                <h2 class="text-base font-bold text-gray-800">{{ it.descripcion || it.desc_repuesto || '—' }}</h2>
+                @if (it.desc_repuesto && it.descripcion) {
+                <p class="text-xs text-gray-500 mt-0.5">{{ it.desc_repuesto }}</p>
+                }
+            </div>
+            <button (click)="showDetail = false" class="text-gray-400 hover:text-gray-600 p-1">
+                <i class="pi pi-times text-sm"></i>
+            </button>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-3 gap-3">
+            <div class="bg-gray-50 rounded-xl p-3">
+                <p class="text-xs text-gray-400 mb-0.5">Precio unit. prom.</p>
+                <p class="text-lg font-bold text-gray-800">${{ it.precio_unit_promedio | number:'1.2-2' }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-3">
+                <p class="text-xs text-gray-400 mb-0.5">Prom. histórico / mes</p>
+                <p class="text-lg font-bold text-gray-800">{{ it.promedio_historico | number:'1.0-0' }} uds</p>
+            </div>
+            <div class="bg-violet-50 rounded-xl p-3">
+                <p class="text-xs text-violet-500 mb-0.5">Total proyectado ({{ it.proyecciones.length }} meses)</p>
+                <p class="text-lg font-bold text-violet-700">${{ totalProyectadoGeneral(it) | number:'1.2-2' }}</p>
+            </div>
+        </div>
+
+        <!-- Tabla proyecciones -->
+        <div class="overflow-x-auto rounded-xl border border-gray-100">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Mes</th>
+                        <th class="px-4 py-2.5 text-right text-xs font-semibold text-violet-600 uppercase tracking-wide">Uds proyect.</th>
+                        <th class="px-4 py-2.5 text-right text-xs font-semibold text-emerald-600 uppercase tracking-wide">Uds vendidas</th>
+                        <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Precio unit.</th>
+                        <th class="px-4 py-2.5 text-right text-xs font-semibold text-violet-600 uppercase tracking-wide">Total proy. $</th>
+                        <th class="px-4 py-2.5 text-right text-xs font-semibold text-emerald-600 uppercase tracking-wide">Total real $</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @for (proj of it.proyecciones; track $index) {
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2.5 font-medium"
+                            [class.text-gray-700]="proj.tipo === 'proyeccion'"
+                            [class.text-emerald-700]="proj.tipo === 'historico'"
+                            [class.text-amber-700]="proj.tipo === 'actual'">
+                            {{ proj.mes_nombre }} {{ proj.anio }}
+                        </td>
+                        <td class="px-4 py-2.5 text-right text-violet-700 font-semibold">{{ proj.cantidad_proyectada | number }}</td>
+                        <td class="px-4 py-2.5 text-right">
+                            @if (proj.cantidad_real !== null) {
+                            <span class="font-semibold"
+                                [class.text-emerald-600]="proj.cantidad_real >= proj.cantidad_proyectada"
+                                [class.text-amber-500]="proj.cantidad_real > 0 && proj.cantidad_real < proj.cantidad_proyectada"
+                                [class.text-gray-400]="proj.cantidad_real === 0">
+                                {{ proj.cantidad_real | number }}
+                            </span>
+                            } @else {
+                            <span class="text-gray-300">—</span>
+                            }
+                        </td>
+                        <td class="px-4 py-2.5 text-right text-gray-500">${{ it.precio_unit_promedio | number:'1.2-2' }}</td>
+                        <td class="px-4 py-2.5 text-right font-semibold text-violet-700">${{ proj.total_proyectado | number:'1.2-2' }}</td>
+                        <td class="px-4 py-2.5 text-right">
+                            @if (proj.neto_real !== null) {
+                            <span class="font-semibold"
+                                [class.text-emerald-600]="proj.neto_real >= proj.total_proyectado"
+                                [class.text-amber-500]="proj.neto_real > 0 && proj.neto_real < proj.total_proyectado"
+                                [class.text-gray-400]="proj.neto_real === 0">
+                                ${{ proj.neto_real | number:'1.2-2' }}
+                            </span>
+                            } @else {
+                            <span class="text-gray-300">—</span>
+                            }
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+                <tfoot class="bg-violet-50 border-t border-violet-100">
+                    <tr>
+                        <td class="px-4 py-2.5 text-xs font-bold text-violet-700 uppercase" colspan="4">Total general</td>
+                        <td class="px-4 py-2.5 text-right font-bold text-violet-700">${{ totalProyectadoGeneral(it) | number:'1.2-2' }}</td>
+                        <td class="px-4 py-2.5 text-right font-bold text-emerald-600">
+                            ${{ totalRealGeneral(it) | number:'1.2-2' }}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Tendencia + R² -->
+        <div class="flex items-center gap-4 text-xs text-gray-500">
+            <span>Tendencia:
+                <span class="font-semibold" [class]="tendenciaClass(it.tendencia)">
+                    <i [class]="tendenciaIcon(it.tendencia) + ' text-xs mr-0.5'"></i>{{ it.tendencia | titlecase }}
+                </span>
+            </span>
+            <span>R²:
+                <span class="font-semibold"
+                    [class.text-emerald-600]="it.r2 >= 0.7"
+                    [class.text-amber-500]="it.r2 >= 0.4 && it.r2 < 0.7"
+                    [class.text-gray-400]="it.r2 < 0.4">
+                    {{ it.r2 | number:'1.2-2' }}
+                </span>
+            </span>
+        </div>
+
+    </div>
+</p-dialog>
+}

@@ -77,6 +77,13 @@ export const DASHBOARD_ROUTES: Routes = [
                         loadComponent: () =>
                             import('./pages/analytics/importaciones/importaciones.component').then((m) => m.ImportacionesComponent),
                     },
+                    {
+                        path: 'movimiento',
+                        title: 'Análisis de Movimiento',
+                        canActivate: [permissionGuard(PERM.ANALYTICS_MOVIMIENTO)],
+                        loadComponent: () =>
+                            import('./pages/analytics/movimiento/movimiento.component').then((m) => m.MovimientoComponent),
+                    },
                 ],
             },
 
