@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  // apiUrl: 'https://hintapi.heimdal.ec',
-  apiUrl: 'http://localhost:8000', // local
+  apiUrl: 'backend-l-production.up.railway.app',
+  // apiUrl: 'http://localhost:8000', 
 };
