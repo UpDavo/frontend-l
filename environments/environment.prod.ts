@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://hintapi.heimdal.ec',
+  apiUrl: 'https://backend-l-production.up.railway.app',
 };
