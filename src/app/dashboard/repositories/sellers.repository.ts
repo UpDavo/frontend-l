@@ -40,6 +40,7 @@ export interface ProductoMarca {
     marca_nombre: string;
     precio_pvp: number | null;
     stock_bod_matriz: number | null;
+    total_cantidad: number;
 }
 
 export interface PagedResult<T> {

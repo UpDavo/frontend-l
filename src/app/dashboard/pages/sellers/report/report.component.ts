@@ -11,7 +11,17 @@ import { BarChartComponent } from '../../../../shared/components/bar-chart/bar-c
 import { SelectSearchComponent, SelectOption } from '../../../../shared/components/select-search/select-search.component';
 
 const ANIOS = [2022, 2023, 2024, 2025, 2026];
-const PRODUCTOS_PAGE_SIZE = 20;
+const PRODUCTOS_PAGE_SIZE = 5;
+
+// Paleta categórica validada (orden fijo, seguro para daltonismo) — un color por barra.
+const CATEGORICAL_PALETTE = [
+    '#2a78d6', '#eb6834', '#1baf7a', '#eda100',
+    '#e87ba4', '#008300', '#4a3aa7', '#e34948',
+];
+
+function paletteColors(n: number): string[] {
+    return Array.from({ length: n }, (_, i) => CATEGORICAL_PALETTE[i % CATEGORICAL_PALETTE.length]);
+}
 
 @Component({
     selector: 'app-sellers-report',
@@ -41,6 +51,7 @@ export class SellersReportComponent implements OnInit {
     readonly resumenData = computed(
         () => this.svc.reporte()?.resumen_anual.map(r => r.total_usd) ?? [],
     );
+    readonly resumenColors = computed(() => paletteColors(this.resumenData().length));
 
     readonly clienteMetric = computed<MetricCardData | null>(() => {
         const r = this.svc.reporte();
@@ -61,16 +72,16 @@ export class SellersReportComponent implements OnInit {
     );
     readonly topMarcasLabels = computed(() => this.topMarcas().map(m => m.marca_nombre));
     readonly topMarcasData   = computed(() => this.topMarcas().map(m => m.total_historico));
+    readonly topMarcasColors = computed(() => paletteColors(this.topMarcasData().length));
 
     // ── Marca seleccionada (drill-down de items) ────────────────────
     marcaSeleccionada = signal<MarcaVenta | null>(null);
     fProductosMarcaSearch = signal('');
+    itemsTopN = signal<5 | 10>(5);
 
-    readonly marcaSeleccionadaLabels = computed(() => this.anios.map(String));
-    readonly marcaSeleccionadaData   = computed(() => {
-        const m = this.marcaSeleccionada();
-        return m ? this.anios.map(a => m.anios[a] ?? 0) : [];
-    });
+    readonly topItemsLabels = computed(() => this.svc.topItemsMarca().map(p => p.item_codigo));
+    readonly topItemsData   = computed(() => this.svc.topItemsMarca().map(p => p.total_cantidad));
+    readonly topItemsColors = computed(() => paletteColors(this.topItemsData().length));
 
     ngOnInit(): void {
         this.svc.loadVendedores();
@@ -111,6 +122,14 @@ export class SellersReportComponent implements OnInit {
         this.marcaSeleccionada.set(marca);
         this.fProductosMarcaSearch.set('');
         this.svc.loadProductosMarca(clienteId, marca.marca_id, { page: 1, page_size: PRODUCTOS_PAGE_SIZE });
+        this.svc.loadTopItemsMarca(clienteId, marca.marca_id, this.itemsTopN());
+    }
+
+    setItemsTopN(n: 5 | 10): void {
+        this.itemsTopN.set(n);
+        const clienteId = this.svc.reporte()?.cliente.id;
+        const marcaId = this.marcaSeleccionada()?.marca_id;
+        if (clienteId && marcaId) this.svc.loadTopItemsMarca(clienteId, marcaId, n);
     }
 
     onProductosMarcaLazyLoad(event: TableLazyLoadEvent): void {

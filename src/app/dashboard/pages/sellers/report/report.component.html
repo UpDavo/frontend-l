@@ -42,8 +42,8 @@
             </div>
         </div>
         <p-table #dtClientes [value]="svc.clientes()" [loading]="svc.loadingClientes()"
-            [paginator]="true" [rows]="10" [globalFilterFields]="['codigo', 'nombre', 'ciudad', 'provincia', 'zona']"
-            [rowsPerPageOptions]="[10, 20, 50]" responsiveLayout="scroll">
+            [paginator]="true" [rows]="5" [globalFilterFields]="['codigo', 'nombre', 'ciudad', 'provincia', 'zona']"
+            [rowsPerPageOptions]="[5, 10, 15]" responsiveLayout="scroll">
             <ng-template #header>
                 <tr>
                     <th pSortableColumn="codigo">Código <p-sortIcon field="codigo" /></th>
@@ -56,7 +56,7 @@
             </ng-template>
             <ng-template #body let-c>
                 <tr class="cursor-pointer transition-colors hover:bg-brand/5"
-                    [class.bg-indigo-50]="fClienteId() === c.id"
+                    [style.background-color]="fClienteId() === c.id ? '#eef2ff' : null"
                     (click)="selectCliente(c)">
                     <td class="font-medium text-gray-800">{{ c.codigo }}</td>
                     <td class="text-gray-700">{{ c.nombre || '—' }}</td>
@@ -98,19 +98,13 @@
                     <h2 class="text-lg font-semibold text-gray-800">{{ r.cliente.nombre || '—' }}</h2>
                     <p class="text-xs text-gray-400 mt-0.5">Código: {{ r.cliente.codigo }} · Vendedor: {{ r.cliente.vendedor ?? '—' }}</p>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="px-3 py-1 rounded-lg text-xs font-medium"
-                        [class.bg-emerald-50]="r.cliente.estado === 'Activo'"
-                        [class.text-emerald-600]="r.cliente.estado === 'Activo'"
-                        [class.bg-red-50]="r.cliente.estado !== 'Activo'"
-                        [class.text-red-600]="r.cliente.estado !== 'Activo'">
-                        {{ r.cliente.estado || 'Sin estado' }}
-                    </span>
-                    <button type="button" (click)="imprimir()" data-no-print
-                        class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors flex items-center gap-1.5">
-                        <i class="pi pi-print"></i>Imprimir reporte
-                    </button>
-                </div>
+                <span class="px-3 py-1 rounded-lg text-xs font-medium"
+                    [class.bg-emerald-50]="r.cliente.estado === 'Activo'"
+                    [class.text-emerald-600]="r.cliente.estado === 'Activo'"
+                    [class.bg-red-50]="r.cliente.estado !== 'Activo'"
+                    [class.text-red-600]="r.cliente.estado !== 'Activo'">
+                    {{ r.cliente.estado || 'Sin estado' }}
+                </span>
             </div>
             <div class="flex flex-wrap gap-4 text-xs text-gray-500">
                 <span><i class="pi pi-map-marker mr-1"></i>{{ r.cliente.ciudad || '—' }}, {{ r.cliente.provincia || '—' }}</span>
@@ -118,15 +112,25 @@
             </div>
         </div>
 
-        <!-- Métrica + tendencia -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Ventas históricas + Imprimir -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             @if (clienteMetric(); as metric) {
             <app-metric-card [data]="metric" />
             }
-            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Ventas por año (todas las marcas)</p>
-                <app-bar-chart [labels]="resumenLabels()" [data]="resumenData()" />
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col items-center justify-center gap-2 text-center" data-no-print>
+                <i class="pi pi-print text-2xl text-brand"></i>
+                <p class="text-sm text-gray-500">Genera un PDF con el reporte completo de este cliente</p>
+                <button type="button" (click)="imprimir()"
+                    class="px-4 py-2 bg-brand text-white rounded-xl text-sm font-medium hover:bg-brand-dark transition-colors flex items-center gap-1.5">
+                    <i class="pi pi-print"></i>Imprimir reporte
+                </button>
             </div>
+        </div>
+
+        <!-- Ventas por año -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Ventas por año (todas las marcas)</p>
+            <app-bar-chart [labels]="resumenLabels()" [data]="resumenData()" [color]="resumenColors()" />
         </div>
 
         <!-- Top marcas -->
@@ -145,7 +149,7 @@
                 </div>
             </div>
             @if (topMarcas().length) {
-            <app-bar-chart [labels]="topMarcasLabels()" [data]="topMarcasData()" />
+            <app-bar-chart [labels]="topMarcasLabels()" [data]="topMarcasData()" [color]="topMarcasColors()" />
             <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mt-3 mb-1.5">Rango de años con compras</p>
             <div class="flex flex-wrap gap-2">
                 @for (m of topMarcas(); track m.marca_id) {
@@ -173,8 +177,8 @@
                         class="border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
                 </div>
             </div>
-            <p-table #dtMarcas [value]="r.marcas_compradas" [paginator]="true" [rows]="10"
-                [globalFilterFields]="['marca_nombre']" [rowsPerPageOptions]="[10, 20, 50]"
+            <p-table #dtMarcas [value]="r.marcas_compradas" [paginator]="true" [rows]="5"
+                [globalFilterFields]="['marca_nombre']" [rowsPerPageOptions]="[5, 10, 15]"
                 responsiveLayout="scroll">
                 <ng-template #header>
                     <tr>
@@ -188,7 +192,7 @@
                 </ng-template>
                 <ng-template #body let-m>
                     <tr class="cursor-pointer transition-colors hover:bg-brand/5"
-                        [class.bg-indigo-50]="marcaSeleccionada()?.marca_id === m.marca_id"
+                        [style.background-color]="marcaSeleccionada()?.marca_id === m.marca_id ? '#eef2ff' : null"
                         (click)="selectMarca(m)">
                         <td class="font-medium text-gray-800">{{ m.marca_nombre }}</td>
                         @for (a of anios; track a) {
@@ -216,49 +220,74 @@
 
         <!-- Detalle de la marca seleccionada -->
         @if (marcaSeleccionada(); as marca) {
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Ventas por año — {{ marca.marca_nombre }}</p>
-                <app-bar-chart [labels]="marcaSeleccionadaLabels()" [data]="marcaSeleccionadaData()" color="#6344e6" />
-            </div>
-            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
-                    <div>
-                        <h3 class="text-base font-semibold text-gray-700">Items de {{ marca.marca_nombre }}</h3>
-                        <p class="text-xs text-gray-400 mt-0.5">Catálogo de items de esta marca</p>
-                    </div>
-                    <div class="relative" data-no-print>
-                        <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" placeholder="Buscar item o descripción..."
-                            [ngModel]="fProductosMarcaSearch()"
-                            (ngModelChange)="searchProductosMarca($event)"
-                            class="border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
-                    </div>
+
+        <!-- Top items más vendidos de la marca -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <div>
+                    <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Top items más comprados — {{ marca.marca_nombre }}</p>
+                    <p class="text-[11px] text-gray-400 mt-0.5">Ranking por unidades compradas por este cliente</p>
                 </div>
-                <p-table [value]="svc.productosMarca()" [lazy]="true" (onLazyLoad)="onProductosMarcaLazyLoad($event)"
-                    [paginator]="true" [rows]="20" [totalRecords]="svc.productosMarcaTotal()" [loading]="svc.productosMarcaLoading()"
-                    [rowsPerPageOptions]="[20, 50, 100]" responsiveLayout="scroll">
-                    <ng-template #header>
-                        <tr>
-                            <th pSortableColumn="item_codigo">Item <p-sortIcon field="item_codigo" /></th>
-                            <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion" /></th>
-                            <th pSortableColumn="precio_pvp" class="text-right">PVP <p-sortIcon field="precio_pvp" /></th>
-                            <th pSortableColumn="stock_bod_matriz" class="text-right">Stock <p-sortIcon field="stock_bod_matriz" /></th>
-                        </tr>
-                    </ng-template>
-                    <ng-template #body let-p>
-                        <tr>
-                            <td class="font-medium text-gray-800 whitespace-nowrap">{{ p.item_codigo }}</td>
-                            <td class="text-gray-600 max-w-64 truncate" [title]="p.descripcion">{{ p.descripcion || '—' }}</td>
-                            <td class="text-right text-gray-700">{{ p.precio_pvp ? ('$' + (p.precio_pvp | number:'1.2-2')) : '—' }}</td>
-                            <td class="text-right text-gray-700">{{ p.stock_bod_matriz ?? '—' }}</td>
-                        </tr>
-                    </ng-template>
-                    <ng-template #emptymessage>
-                        <tr><td colspan="4" class="text-center text-sm text-gray-400 py-6">Sin items para esta marca.</td></tr>
-                    </ng-template>
-                </p-table>
+                <div class="flex gap-1" data-no-print>
+                    <button type="button" (click)="setItemsTopN(5)"
+                        class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                        [class.bg-brand]="itemsTopN() === 5" [class.text-white]="itemsTopN() === 5"
+                        [class.bg-gray-100]="itemsTopN() !== 5" [class.text-gray-600]="itemsTopN() !== 5">Top 5</button>
+                    <button type="button" (click)="setItemsTopN(10)"
+                        class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                        [class.bg-brand]="itemsTopN() === 10" [class.text-white]="itemsTopN() === 10"
+                        [class.bg-gray-100]="itemsTopN() !== 10" [class.text-gray-600]="itemsTopN() !== 10">Top 10</button>
+                </div>
             </div>
+            @if (svc.topItemsMarcaLoading()) {
+            <div class="flex items-center justify-center py-10"><i class="pi pi-spin pi-spinner text-xl text-brand"></i></div>
+            } @else if (topItemsLabels().length) {
+            <app-bar-chart [labels]="topItemsLabels()" [data]="topItemsData()" [color]="topItemsColors()" />
+            } @else {
+            <p class="text-sm text-gray-400 py-4 text-center">No hay items comprados registrados para esta marca todavía.</p>
+            }
+        </div>
+
+        <!-- Items comprados de la marca -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h3 class="text-base font-semibold text-gray-700">Items de {{ marca.marca_nombre }}</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Items que este cliente compró de esta marca</p>
+                </div>
+                <div class="relative" data-no-print>
+                    <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                    <input type="text" placeholder="Buscar item o descripción..."
+                        [ngModel]="fProductosMarcaSearch()"
+                        (ngModelChange)="searchProductosMarca($event)"
+                        class="border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+            </div>
+            <p-table [value]="svc.productosMarca()" [lazy]="true" (onLazyLoad)="onProductosMarcaLazyLoad($event)"
+                [paginator]="true" [rows]="5" [totalRecords]="svc.productosMarcaTotal()" [loading]="svc.productosMarcaLoading()"
+                [rowsPerPageOptions]="[5, 10, 15]" responsiveLayout="scroll">
+                <ng-template #header>
+                    <tr>
+                        <th pSortableColumn="item_codigo">Item <p-sortIcon field="item_codigo" /></th>
+                        <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion" /></th>
+                        <th pSortableColumn="precio_pvp" class="text-right">PVP <p-sortIcon field="precio_pvp" /></th>
+                        <th pSortableColumn="stock_bod_matriz" class="text-right">Stock <p-sortIcon field="stock_bod_matriz" /></th>
+                        <th pSortableColumn="total_cantidad" class="text-right">Comprados <p-sortIcon field="total_cantidad" /></th>
+                    </tr>
+                </ng-template>
+                <ng-template #body let-p>
+                    <tr>
+                        <td class="font-medium text-gray-800 whitespace-nowrap">{{ p.item_codigo }}</td>
+                        <td class="text-gray-600 max-w-64 truncate" [title]="p.descripcion">{{ p.descripcion || '—' }}</td>
+                        <td class="text-right text-gray-700">{{ p.precio_pvp ? ('$' + (p.precio_pvp | number:'1.2-2')) : '—' }}</td>
+                        <td class="text-right text-gray-700">{{ p.stock_bod_matriz ?? '—' }}</td>
+                        <td class="text-right text-gray-700">{{ p.total_cantidad | number:'1.0-0' }}</td>
+                    </tr>
+                </ng-template>
+                <ng-template #emptymessage>
+                    <tr><td colspan="5" class="text-center text-sm text-gray-400 py-6">No hay items comprados registrados para esta marca todavía.</td></tr>
+                </ng-template>
+            </p-table>
         </div>
         }
 

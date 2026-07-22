@@ -16,6 +16,9 @@ export class SellersService {
     readonly productosMarcaTotal   = signal(0);
     readonly productosMarcaLoading = signal(false);
 
+    readonly topItemsMarca        = signal<ProductoMarca[]>([]);
+    readonly topItemsMarcaLoading = signal(false);
+
     loadVendedores(): void {
         this.repo.getVendedores().subscribe({
             next: (res) => this.vendedores.set(res),
@@ -62,9 +65,18 @@ export class SellersService {
         });
     }
 
+    loadTopItemsMarca(clienteId: number, marcaId: number, topN: number): void {
+        this.topItemsMarcaLoading.set(true);
+        this.repo.getProductosMarca(clienteId, marcaId, { page: 1, page_size: topN, ordering: '-total_cantidad' }).subscribe({
+            next: (res) => { this.topItemsMarcaLoading.set(false); this.topItemsMarca.set(res.results); },
+            error: () => { this.topItemsMarcaLoading.set(false); },
+        });
+    }
+
     resetProductosMarca(): void {
         this.productosMarca.set([]);
         this.productosMarcaTotal.set(0);
+        this.topItemsMarca.set([]);
     }
 
     reset(): void {
