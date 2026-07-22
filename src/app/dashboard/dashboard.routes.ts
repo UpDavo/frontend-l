@@ -87,6 +87,20 @@ export const DASHBOARD_ROUTES: Routes = [
                 ],
             },
 
+            // ─── Vendedores ───────────────────────────────────────────────────────
+            {
+                path: 'sellers',
+                children: [
+                    {
+                        path: 'report',
+                        title: 'Reporte de Vendedores',
+                        canActivate: [permissionGuard(PERM.SELLERS_REPORT)],
+                        loadComponent: () =>
+                            import('./pages/sellers/report/report.component').then((m) => m.SellersReportComponent),
+                    },
+                ],
+            },
+
             // ─── Sin permiso ──────────────────────────────────────────────────────
             {
                 path: 'unauthorized',

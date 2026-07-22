@@ -6,6 +6,7 @@ export const PERM = {
     ANALYTICS_STOCK: '/analytics/stock',
     ANALYTICS_IMPORTACIONES: '/analytics/importaciones',
     ANALYTICS_MOVIMIENTO: '/analytics/movimiento',
+    SELLERS_REPORT: '/sellers/report',
 } as const;
 
 export type PermissionKey = (typeof PERM)[keyof typeof PERM];
@@ -38,6 +39,12 @@ export const DASHBOARD_NAV: NavSection[] = [
             { label: 'Stock Bodega', icon: 'pi pi-box', route: '/dashboard/analytics/stock', requiredPermission: PERM.ANALYTICS_STOCK, tourId: 'analytics-stock' },
             { label: 'Importaciones', icon: 'pi pi-truck', route: '/dashboard/analytics/importaciones', requiredPermission: PERM.ANALYTICS_IMPORTACIONES, tourId: 'analytics-importaciones' },
             { label: 'Análisis Movimiento', icon: 'pi pi-calendar-clock', route: '/dashboard/analytics/movimiento', requiredPermission: PERM.ANALYTICS_MOVIMIENTO, tourId: 'analytics-movimiento' },
+        ],
+    },
+    {
+        title: 'VENDEDORES',
+        items: [
+            { label: 'Reporte de Vendedores', icon: 'pi pi-user', route: '/dashboard/sellers/report', requiredPermission: PERM.SELLERS_REPORT, tourId: 'sellers-report' },
         ],
     },
     {
