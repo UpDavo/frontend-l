@@ -117,3 +117,29 @@ quill-editor .ql-tooltip,
 quill-editor .ql-picker-options {
     z-index: 1000;
 }
+
+/* ── Impresión de reportes — muestra solo #report-print-area, centrado ── */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #report-print-area,
+    #report-print-area * {
+        visibility: visible;
+    }
+
+    #report-print-area {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 850px;
+        margin: 0;
+    }
+
+    #report-print-area [data-no-print] {
+        display: none !important;
+    }
+}

@@ -34,7 +34,7 @@ export interface MarcaNoComprada {
     marca_nombre: string;
 }
 
-export interface ProductoSugerido {
+export interface ProductoMarca {
     item_codigo: string;
     descripcion: string;
     marca_nombre: string;
@@ -86,17 +86,18 @@ export class SellersRepository {
         return this.http.get<ReporteCliente>(`${this.BASE}/clientes/${clienteId}/reporte/`);
     }
 
-    getProductosSugeridos(
+    getProductosMarca(
         clienteId: number,
+        marcaId: number,
         opts: { page?: number; page_size?: number; search?: string; ordering?: string } = {},
-    ): Observable<PagedResult<ProductoSugerido>> {
+    ): Observable<PagedResult<ProductoMarca>> {
         let p = new HttpParams();
         if (opts.page) p = p.set('page', opts.page);
         if (opts.page_size) p = p.set('page_size', opts.page_size);
         if (opts.search) p = p.set('search', opts.search);
         if (opts.ordering) p = p.set('ordering', opts.ordering);
-        return this.http.get<PagedResult<ProductoSugerido>>(
-            `${this.BASE}/clientes/${clienteId}/productos-sugeridos/`, { params: p },
+        return this.http.get<PagedResult<ProductoMarca>>(
+            `${this.BASE}/clientes/${clienteId}/marcas/${marcaId}/productos/`, { params: p },
         );
     }
 }

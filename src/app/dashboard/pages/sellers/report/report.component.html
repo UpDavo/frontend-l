@@ -16,216 +16,253 @@
                 [value]="fVendedorId()"
                 (valueChange)="onVendedorChange($event)" />
         </div>
-        <div>
-            <label class="block text-xs text-gray-500 mb-1">Cliente</label>
-            <app-select-search
-                [options]="clienteOptions()"
-                placeholder="Selecciona un cliente"
-                [value]="fClienteId()"
-                (valueChange)="onClienteChange($event)"
-                [disabled]="!fVendedorId()"
-                [loading]="svc.loadingClientes()" />
-        </div>
     </app-filter-bar>
 
     <!-- Estado vacío -->
-    @if (!svc.loading() && !svc.reporte()) {
+    @if (!fVendedorId()) {
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 flex flex-col items-center justify-center text-center gap-2">
         <i class="pi pi-user-edit text-3xl text-gray-300"></i>
-        <p class="text-sm text-gray-500">Selecciona un vendedor y un cliente, luego presiona <span class="font-medium">Buscar</span> para ver el reporte.</p>
+        <p class="text-sm text-gray-500">Selecciona un vendedor para ver la lista de sus clientes.</p>
     </div>
     }
 
-    <!-- Reporte -->
-    @if (svc.reporte(); as r) {
-
-    <!-- Datos del cliente -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3">
-        <div class="flex items-start justify-between flex-wrap gap-3">
-            <div>
-                <h2 class="text-lg font-semibold text-gray-800">{{ r.cliente.nombre || '—' }}</h2>
-                <p class="text-xs text-gray-400 mt-0.5">Código: {{ r.cliente.codigo }} · Vendedor: {{ r.cliente.vendedor ?? '—' }}</p>
-            </div>
-            <span class="px-3 py-1 rounded-lg text-xs font-medium"
-                [class.bg-emerald-50]="r.cliente.estado === 'Activo'"
-                [class.text-emerald-600]="r.cliente.estado === 'Activo'"
-                [class.bg-red-50]="r.cliente.estado !== 'Activo'"
-                [class.text-red-600]="r.cliente.estado !== 'Activo'">
-                {{ r.cliente.estado || 'Sin estado' }}
-            </span>
-        </div>
-        <div class="flex flex-wrap gap-4 text-xs text-gray-500">
-            <span><i class="pi pi-map-marker mr-1"></i>{{ r.cliente.ciudad || '—' }}, {{ r.cliente.provincia || '—' }}</span>
-            <span><i class="pi pi-compass mr-1"></i>Zona {{ r.cliente.zona || '—' }}</span>
-        </div>
-    </div>
-
-    <!-- Métrica + tendencia -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        @if (clienteMetric(); as metric) {
-        <app-metric-card [data]="metric" />
-        }
-        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Ventas por año (todas las marcas)</p>
-            <app-bar-chart [labels]="resumenLabels()" [data]="resumenData()" />
-        </div>
-    </div>
-
-    <!-- Top marcas -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Top marcas por venta histórica</p>
-            <div class="flex gap-1">
-                <button type="button" (click)="topN.set(5)"
-                    class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
-                    [class.bg-brand]="topN() === 5" [class.text-white]="topN() === 5"
-                    [class.bg-gray-100]="topN() !== 5" [class.text-gray-600]="topN() !== 5">Top 5</button>
-                <button type="button" (click)="topN.set(10)"
-                    class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
-                    [class.bg-brand]="topN() === 10" [class.text-white]="topN() === 10"
-                    [class.bg-gray-100]="topN() !== 10" [class.text-gray-600]="topN() !== 10">Top 10</button>
-            </div>
-        </div>
-        @if (topMarcas().length) {
-        <app-bar-chart [labels]="topMarcasLabels()" [data]="topMarcasData()" />
-        <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mt-3 mb-1.5">Rango de años con compras</p>
-        <div class="flex flex-wrap gap-2">
-            @for (m of topMarcas(); track m.marca_id) {
-            <span class="px-2.5 py-1 rounded-lg text-xs bg-gray-50 text-gray-500 border border-gray-100">
-                {{ m.marca_nombre }}: {{ m.primer_anio_compra ?? '—' }}–{{ m.ultimo_anio_compra ?? '—' }}
-            </span>
-            }
-        </div>
-        } @else {
-        <p class="text-sm text-gray-400 py-4 text-center">Este cliente no tiene compras registradas.</p>
-        }
-    </div>
-
-    <!-- Marcas compradas -->
+    <!-- Clientes del vendedor -->
+    @if (fVendedorId()) {
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
             <div>
-                <h3 class="text-base font-semibold text-gray-700">Marcas que compra</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Historial de ventas por marca y año (USD)</p>
+                <h3 class="text-base font-semibold text-gray-700">Clientes del vendedor</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Selecciona un cliente para ver su reporte</p>
             </div>
             <div class="relative">
                 <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                <input type="text" placeholder="Buscar marca..."
-                    (input)="dtMarcas.filterGlobal($any($event.target).value, 'contains')"
+                <input type="text" placeholder="Buscar cliente..."
+                    (input)="dtClientes.filterGlobal($any($event.target).value, 'contains')"
                     class="border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
             </div>
         </div>
-        <p-table #dtMarcas [value]="r.marcas_compradas" [paginator]="true" [rows]="10"
-            [globalFilterFields]="['marca_nombre']" [rowsPerPageOptions]="[10, 20, 50]"
-            responsiveLayout="scroll">
+        <p-table #dtClientes [value]="svc.clientes()" [loading]="svc.loadingClientes()"
+            [paginator]="true" [rows]="10" [globalFilterFields]="['codigo', 'nombre', 'ciudad', 'provincia', 'zona']"
+            [rowsPerPageOptions]="[10, 20, 50]" responsiveLayout="scroll">
             <ng-template #header>
                 <tr>
-                    <th pSortableColumn="marca_nombre">Marca <p-sortIcon field="marca_nombre" /></th>
-                    @for (a of anios; track a) {
-                    <th [pSortableColumn]="'anios.' + a" class="text-right">{{ a }} <p-sortIcon [field]="'anios.' + a" /></th>
-                    }
-                    <th pSortableColumn="total_historico" class="text-right">Total <p-sortIcon field="total_historico" /></th>
+                    <th pSortableColumn="codigo">Código <p-sortIcon field="codigo" /></th>
+                    <th pSortableColumn="nombre">Nombre <p-sortIcon field="nombre" /></th>
+                    <th>Ciudad</th>
+                    <th>Provincia</th>
+                    <th>Zona</th>
                     <th class="text-center">Estado</th>
                 </tr>
             </ng-template>
-            <ng-template #body let-m>
-                <tr>
-                    <td class="font-medium text-gray-800">{{ m.marca_nombre }}</td>
-                    @for (a of anios; track a) {
-                    <td class="text-right text-gray-600">
-                        {{ m.anios[a] ? ('$' + (m.anios[a] | number:'1.0-0')) : '—' }}
-                    </td>
-                    }
-                    <td class="text-right font-semibold text-gray-800">${{ m.total_historico | number:'1.0-0' }}</td>
+            <ng-template #body let-c>
+                <tr class="cursor-pointer transition-colors hover:bg-brand/5"
+                    [class.bg-indigo-50]="fClienteId() === c.id"
+                    (click)="selectCliente(c)">
+                    <td class="font-medium text-gray-800">{{ c.codigo }}</td>
+                    <td class="text-gray-700">{{ c.nombre || '—' }}</td>
+                    <td class="text-gray-500">{{ c.ciudad || '—' }}</td>
+                    <td class="text-gray-500">{{ c.provincia || '—' }}</td>
+                    <td class="text-gray-500">{{ c.zona || '—' }}</td>
                     <td class="text-center">
-                        @if (m.en_riesgo) {
-                        <span class="px-2 py-0.5 rounded-lg text-xs font-medium bg-red-50 text-red-600">
-                            <i class="pi pi-exclamation-triangle text-[10px] mr-1"></i>Sin compras recientes
+                        <span class="px-2 py-0.5 rounded-lg text-xs font-medium"
+                            [class.bg-emerald-50]="c.estado === 'Activo'"
+                            [class.text-emerald-600]="c.estado === 'Activo'"
+                            [class.bg-red-50]="c.estado !== 'Activo'"
+                            [class.text-red-600]="c.estado !== 'Activo'">
+                            {{ c.estado || 'Sin estado' }}
                         </span>
-                        } @else {
-                        <span class="px-2 py-0.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-600">Activa</span>
-                        }
                     </td>
                 </tr>
             </ng-template>
             <ng-template #emptymessage>
-                <tr><td [attr.colspan]="anios.length + 3" class="text-center text-sm text-gray-400 py-6">Este cliente no tiene compras registradas.</td></tr>
+                <tr><td colspan="6" class="text-center text-sm text-gray-400 py-6">Este vendedor no tiene clientes registrados.</td></tr>
             </ng-template>
         </p-table>
     </div>
+    }
 
-    <!-- Marcas no compradas -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100">
-            <h3 class="text-base font-semibold text-gray-700">Marcas que no compra</h3>
-            <p class="text-xs text-gray-400 mt-0.5">Oportunidad de venta cruzada — ofrece estas marcas en la llamada</p>
+    <!-- Reporte del cliente seleccionado -->
+    @if (svc.loading()) {
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 flex items-center justify-center">
+        <i class="pi pi-spin pi-spinner text-2xl text-brand"></i>
+    </div>
+    }
+
+    @if (svc.reporte(); as r) {
+    <div id="report-print-area" class="flex flex-col gap-5">
+
+        <!-- Datos del cliente -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3">
+            <div class="flex items-start justify-between flex-wrap gap-3">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-800">{{ r.cliente.nombre || '—' }}</h2>
+                    <p class="text-xs text-gray-400 mt-0.5">Código: {{ r.cliente.codigo }} · Vendedor: {{ r.cliente.vendedor ?? '—' }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-lg text-xs font-medium"
+                        [class.bg-emerald-50]="r.cliente.estado === 'Activo'"
+                        [class.text-emerald-600]="r.cliente.estado === 'Activo'"
+                        [class.bg-red-50]="r.cliente.estado !== 'Activo'"
+                        [class.text-red-600]="r.cliente.estado !== 'Activo'">
+                        {{ r.cliente.estado || 'Sin estado' }}
+                    </span>
+                    <button type="button" (click)="imprimir()" data-no-print
+                        class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors flex items-center gap-1.5">
+                        <i class="pi pi-print"></i>Imprimir reporte
+                    </button>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-4 text-xs text-gray-500">
+                <span><i class="pi pi-map-marker mr-1"></i>{{ r.cliente.ciudad || '—' }}, {{ r.cliente.provincia || '—' }}</span>
+                <span><i class="pi pi-compass mr-1"></i>Zona {{ r.cliente.zona || '—' }}</span>
+            </div>
         </div>
-        @if (r.marcas_no_compradas.length) {
-        <p-table #dtNoCompra [value]="r.marcas_no_compradas" [paginator]="true" [rows]="10"
-            [globalFilterFields]="['marca_nombre']" [rowsPerPageOptions]="[10, 20, 50]"
-            responsiveLayout="scroll">
-            <ng-template #caption>
-                <div class="relative flex justify-end">
+
+        <!-- Métrica + tendencia -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            @if (clienteMetric(); as metric) {
+            <app-metric-card [data]="metric" />
+            }
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Ventas por año (todas las marcas)</p>
+                <app-bar-chart [labels]="resumenLabels()" [data]="resumenData()" />
+            </div>
+        </div>
+
+        <!-- Top marcas -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Top marcas por venta histórica</p>
+                <div class="flex gap-1" data-no-print>
+                    <button type="button" (click)="topN.set(5)"
+                        class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                        [class.bg-brand]="topN() === 5" [class.text-white]="topN() === 5"
+                        [class.bg-gray-100]="topN() !== 5" [class.text-gray-600]="topN() !== 5">Top 5</button>
+                    <button type="button" (click)="topN.set(10)"
+                        class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                        [class.bg-brand]="topN() === 10" [class.text-white]="topN() === 10"
+                        [class.bg-gray-100]="topN() !== 10" [class.text-gray-600]="topN() !== 10">Top 10</button>
+                </div>
+            </div>
+            @if (topMarcas().length) {
+            <app-bar-chart [labels]="topMarcasLabels()" [data]="topMarcasData()" />
+            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mt-3 mb-1.5">Rango de años con compras</p>
+            <div class="flex flex-wrap gap-2">
+                @for (m of topMarcas(); track m.marca_id) {
+                <span class="px-2.5 py-1 rounded-lg text-xs bg-gray-50 text-gray-500 border border-gray-100">
+                    {{ m.marca_nombre }}: {{ m.primer_anio_compra ?? '—' }}–{{ m.ultimo_anio_compra ?? '—' }}
+                </span>
+                }
+            </div>
+            } @else {
+            <p class="text-sm text-gray-400 py-4 text-center">Este cliente no tiene compras registradas.</p>
+            }
+        </div>
+
+        <!-- Marcas compradas -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h3 class="text-base font-semibold text-gray-700">Marcas que compra</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Historial de ventas por marca y año (USD) · Haz clic en una marca para ver sus items</p>
+                </div>
+                <div class="relative" data-no-print>
                     <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
                     <input type="text" placeholder="Buscar marca..."
-                        (input)="dtNoCompra.filterGlobal($any($event.target).value, 'contains')"
+                        (input)="dtMarcas.filterGlobal($any($event.target).value, 'contains')"
                         class="border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
                 </div>
-            </ng-template>
-            <ng-template #header>
-                <tr><th pSortableColumn="marca_nombre">Marca <p-sortIcon field="marca_nombre" /></th></tr>
-            </ng-template>
-            <ng-template #body let-mnc>
-                <tr><td class="text-gray-700">{{ mnc.marca_nombre }}</td></tr>
-            </ng-template>
-        </p-table>
-        } @else {
-        <p class="text-sm text-gray-400 p-5">El cliente ya compra todas las marcas del catálogo.</p>
-        }
-    </div>
-
-    <!-- Productos sugeridos -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
-            <div>
-                <h3 class="text-base font-semibold text-gray-700">Productos sugeridos</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Catálogo de las marcas que el cliente aún no compra</p>
             </div>
-            <div class="relative">
-                <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                <input type="text" placeholder="Buscar item o descripción..."
-                    [ngModel]="fProductosSearch()"
-                    (ngModelChange)="searchProductos($event)"
-                    class="border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            <p-table #dtMarcas [value]="r.marcas_compradas" [paginator]="true" [rows]="10"
+                [globalFilterFields]="['marca_nombre']" [rowsPerPageOptions]="[10, 20, 50]"
+                responsiveLayout="scroll">
+                <ng-template #header>
+                    <tr>
+                        <th pSortableColumn="marca_nombre">Marca <p-sortIcon field="marca_nombre" /></th>
+                        @for (a of anios; track a) {
+                        <th [pSortableColumn]="'anios.' + a" class="text-right">{{ a }} <p-sortIcon [field]="'anios.' + a" /></th>
+                        }
+                        <th pSortableColumn="total_historico" class="text-right">Total <p-sortIcon field="total_historico" /></th>
+                        <th class="text-center">Estado</th>
+                    </tr>
+                </ng-template>
+                <ng-template #body let-m>
+                    <tr class="cursor-pointer transition-colors hover:bg-brand/5"
+                        [class.bg-indigo-50]="marcaSeleccionada()?.marca_id === m.marca_id"
+                        (click)="selectMarca(m)">
+                        <td class="font-medium text-gray-800">{{ m.marca_nombre }}</td>
+                        @for (a of anios; track a) {
+                        <td class="text-right text-gray-600">
+                            {{ m.anios[a] ? ('$' + (m.anios[a] | number:'1.0-0')) : '—' }}
+                        </td>
+                        }
+                        <td class="text-right font-semibold text-gray-800">${{ m.total_historico | number:'1.0-0' }}</td>
+                        <td class="text-center">
+                            @if (m.en_riesgo) {
+                            <span class="px-2 py-0.5 rounded-lg text-xs font-medium bg-red-50 text-red-600">
+                                <i class="pi pi-exclamation-triangle text-[10px] mr-1"></i>Sin compras recientes
+                            </span>
+                            } @else {
+                            <span class="px-2 py-0.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-600">Activa</span>
+                            }
+                        </td>
+                    </tr>
+                </ng-template>
+                <ng-template #emptymessage>
+                    <tr><td [attr.colspan]="anios.length + 3" class="text-center text-sm text-gray-400 py-6">Este cliente no tiene compras registradas.</td></tr>
+                </ng-template>
+            </p-table>
+        </div>
+
+        <!-- Detalle de la marca seleccionada -->
+        @if (marcaSeleccionada(); as marca) {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Ventas por año — {{ marca.marca_nombre }}</p>
+                <app-bar-chart [labels]="marcaSeleccionadaLabels()" [data]="marcaSeleccionadaData()" color="#6344e6" />
+            </div>
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-700">Items de {{ marca.marca_nombre }}</h3>
+                        <p class="text-xs text-gray-400 mt-0.5">Catálogo de items de esta marca</p>
+                    </div>
+                    <div class="relative" data-no-print>
+                        <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input type="text" placeholder="Buscar item o descripción..."
+                            [ngModel]="fProductosMarcaSearch()"
+                            (ngModelChange)="searchProductosMarca($event)"
+                            class="border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                    </div>
+                </div>
+                <p-table [value]="svc.productosMarca()" [lazy]="true" (onLazyLoad)="onProductosMarcaLazyLoad($event)"
+                    [paginator]="true" [rows]="20" [totalRecords]="svc.productosMarcaTotal()" [loading]="svc.productosMarcaLoading()"
+                    [rowsPerPageOptions]="[20, 50, 100]" responsiveLayout="scroll">
+                    <ng-template #header>
+                        <tr>
+                            <th pSortableColumn="item_codigo">Item <p-sortIcon field="item_codigo" /></th>
+                            <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion" /></th>
+                            <th pSortableColumn="precio_pvp" class="text-right">PVP <p-sortIcon field="precio_pvp" /></th>
+                            <th pSortableColumn="stock_bod_matriz" class="text-right">Stock <p-sortIcon field="stock_bod_matriz" /></th>
+                        </tr>
+                    </ng-template>
+                    <ng-template #body let-p>
+                        <tr>
+                            <td class="font-medium text-gray-800 whitespace-nowrap">{{ p.item_codigo }}</td>
+                            <td class="text-gray-600 max-w-64 truncate" [title]="p.descripcion">{{ p.descripcion || '—' }}</td>
+                            <td class="text-right text-gray-700">{{ p.precio_pvp ? ('$' + (p.precio_pvp | number:'1.2-2')) : '—' }}</td>
+                            <td class="text-right text-gray-700">{{ p.stock_bod_matriz ?? '—' }}</td>
+                        </tr>
+                    </ng-template>
+                    <ng-template #emptymessage>
+                        <tr><td colspan="4" class="text-center text-sm text-gray-400 py-6">Sin items para esta marca.</td></tr>
+                    </ng-template>
+                </p-table>
             </div>
         </div>
-        <p-table [value]="svc.productos()" [lazy]="true" (onLazyLoad)="onProductosLazyLoad($event)"
-            [paginator]="true" [rows]="20" [totalRecords]="svc.productosTotal()" [loading]="svc.productosLoading()"
-            [rowsPerPageOptions]="[20, 50, 100]" responsiveLayout="scroll">
-            <ng-template #header>
-                <tr>
-                    <th pSortableColumn="item_codigo">Item <p-sortIcon field="item_codigo" /></th>
-                    <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion" /></th>
-                    <th pSortableColumn="marca_nombre">Marca <p-sortIcon field="marca_nombre" /></th>
-                    <th pSortableColumn="precio_pvp" class="text-right">PVP <p-sortIcon field="precio_pvp" /></th>
-                    <th pSortableColumn="stock_bod_matriz" class="text-right">Stock <p-sortIcon field="stock_bod_matriz" /></th>
-                </tr>
-            </ng-template>
-            <ng-template #body let-p>
-                <tr>
-                    <td class="font-medium text-gray-800 whitespace-nowrap">{{ p.item_codigo }}</td>
-                    <td class="text-gray-600 max-w-64 truncate" [title]="p.descripcion">{{ p.descripcion || '—' }}</td>
-                    <td class="text-gray-500">{{ p.marca_nombre }}</td>
-                    <td class="text-right text-gray-700">{{ p.precio_pvp ? ('$' + (p.precio_pvp | number:'1.2-2')) : '—' }}</td>
-                    <td class="text-right text-gray-700">{{ p.stock_bod_matriz ?? '—' }}</td>
-                </tr>
-            </ng-template>
-            <ng-template #emptymessage>
-                <tr><td colspan="5" class="text-center text-sm text-gray-400 py-6">Sin productos sugeridos.</td></tr>
-            </ng-template>
-        </p-table>
-    </div>
+        }
 
+    </div>
     }
 
 </div>

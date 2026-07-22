@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { SellersRepository, ReporteCliente, Vendedor, Cliente, ProductoSugerido } from '../../repositories/sellers.repository';
+import { SellersRepository, ReporteCliente, Vendedor, Cliente, ProductoMarca } from '../../repositories/sellers.repository';
 
 @Injectable({ providedIn: 'root' })
 export class SellersService {
@@ -12,9 +12,9 @@ export class SellersService {
     readonly loading         = signal(false);
     readonly error           = signal<string | null>(null);
 
-    readonly productos        = signal<ProductoSugerido[]>([]);
-    readonly productosTotal   = signal(0);
-    readonly productosLoading = signal(false);
+    readonly productosMarca        = signal<ProductoMarca[]>([]);
+    readonly productosMarcaTotal   = signal(0);
+    readonly productosMarcaLoading = signal(false);
 
     loadVendedores(): void {
         this.repo.getVendedores().subscribe({
@@ -36,8 +36,7 @@ export class SellersService {
         this.error.set(null);
         this.loading.set(true);
         this.reporte.set(null);
-        this.productos.set([]);
-        this.productosTotal.set(0);
+        this.resetProductosMarca();
         this.repo.getReporte(clienteId).subscribe({
             next: (res) => { this.loading.set(false); this.reporte.set(res); },
             error: (err) => {
@@ -47,23 +46,31 @@ export class SellersService {
         });
     }
 
-    loadProductos(clienteId: number, opts: { page?: number; page_size?: number; search?: string; ordering?: string } = {}): void {
-        this.productosLoading.set(true);
-        this.repo.getProductosSugeridos(clienteId, opts).subscribe({
+    loadProductosMarca(
+        clienteId: number,
+        marcaId: number,
+        opts: { page?: number; page_size?: number; search?: string; ordering?: string } = {},
+    ): void {
+        this.productosMarcaLoading.set(true);
+        this.repo.getProductosMarca(clienteId, marcaId, opts).subscribe({
             next: (res) => {
-                this.productosLoading.set(false);
-                this.productos.set(res.results);
-                this.productosTotal.set(res.count);
+                this.productosMarcaLoading.set(false);
+                this.productosMarca.set(res.results);
+                this.productosMarcaTotal.set(res.count);
             },
-            error: () => { this.productosLoading.set(false); },
+            error: () => { this.productosMarcaLoading.set(false); },
         });
+    }
+
+    resetProductosMarca(): void {
+        this.productosMarca.set([]);
+        this.productosMarcaTotal.set(0);
     }
 
     reset(): void {
         this.clientes.set([]);
         this.reporte.set(null);
         this.error.set(null);
-        this.productos.set([]);
-        this.productosTotal.set(0);
+        this.resetProductosMarca();
     }
 }

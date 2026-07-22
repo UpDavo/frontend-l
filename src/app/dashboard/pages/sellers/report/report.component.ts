@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule, TableLazyLoadEvent } from 'primeng/table';
 import { SellersService } from '../../../services/sellers/sellers.service';
+import { Cliente, MarcaVenta } from '../../../repositories/sellers.repository';
 import { FilterBarComponent } from '../../../../shared/components/filter-bar/filter-bar.component';
 import { AlertBannerComponent } from '../../../../shared/components/alert-banner/alert-banner.component';
 import { MetricCardComponent, MetricCardData } from '../../../../shared/components/metric-card/metric-card.component';
@@ -32,10 +33,6 @@ export class SellersReportComponent implements OnInit {
         () => this.svc.vendedores().map(v => ({ id: v.id, label: v.nombre })),
     );
 
-    readonly clienteOptions = computed<SelectOption[]>(
-        () => this.svc.clientes().map(c => ({ id: c.id, label: `${c.codigo} — ${c.nombre}` })),
-    );
-
     readonly anios = ANIOS;
 
     readonly resumenLabels = computed(
@@ -52,7 +49,7 @@ export class SellersReportComponent implements OnInit {
             title: 'Ventas históricas totales',
             value: `$${r.marcas_compradas.reduce((s, m) => s + m.total_historico, 0).toLocaleString('es-EC', { maximumFractionDigits: 0 })}`,
             gradient: 'primary-indigo',
-            subtitle: `${r.marcas_compradas.length} marca(s) compradas · ${r.marcas_no_compradas.length} sin comprar`,
+            subtitle: `${r.marcas_compradas.length} marca(s) compradas`,
         };
     });
 
@@ -65,8 +62,15 @@ export class SellersReportComponent implements OnInit {
     readonly topMarcasLabels = computed(() => this.topMarcas().map(m => m.marca_nombre));
     readonly topMarcasData   = computed(() => this.topMarcas().map(m => m.total_historico));
 
-    // ── Productos sugeridos (tabla server-side) ─────────────────────
-    fProductosSearch = signal('');
+    // ── Marca seleccionada (drill-down de items) ────────────────────
+    marcaSeleccionada = signal<MarcaVenta | null>(null);
+    fProductosMarcaSearch = signal('');
+
+    readonly marcaSeleccionadaLabels = computed(() => this.anios.map(String));
+    readonly marcaSeleccionadaData   = computed(() => {
+        const m = this.marcaSeleccionada();
+        return m ? this.anios.map(a => m.anios[a] ?? 0) : [];
+    });
 
     ngOnInit(): void {
         this.svc.loadVendedores();
@@ -75,12 +79,10 @@ export class SellersReportComponent implements OnInit {
     onVendedorChange(id: number | null): void {
         this.fVendedorId.set(id);
         this.fClienteId.set(null);
+        this.marcaSeleccionada.set(null);
+        this.fProductosMarcaSearch.set('');
         this.svc.reset();
         if (id) this.svc.loadClientes(id);
-    }
-
-    onClienteChange(id: number | null): void {
-        this.fClienteId.set(id);
     }
 
     search(): void {
@@ -91,13 +93,30 @@ export class SellersReportComponent implements OnInit {
     reset(): void {
         this.fVendedorId.set(null);
         this.fClienteId.set(null);
-        this.fProductosSearch.set('');
+        this.marcaSeleccionada.set(null);
+        this.fProductosMarcaSearch.set('');
         this.svc.reset();
     }
 
-    onProductosLazyLoad(event: TableLazyLoadEvent): void {
+    selectCliente(cliente: Cliente): void {
+        this.fClienteId.set(cliente.id);
+        this.marcaSeleccionada.set(null);
+        this.fProductosMarcaSearch.set('');
+        this.svc.loadReporte(cliente.id);
+    }
+
+    selectMarca(marca: MarcaVenta): void {
         const clienteId = this.svc.reporte()?.cliente.id;
         if (!clienteId) return;
+        this.marcaSeleccionada.set(marca);
+        this.fProductosMarcaSearch.set('');
+        this.svc.loadProductosMarca(clienteId, marca.marca_id, { page: 1, page_size: PRODUCTOS_PAGE_SIZE });
+    }
+
+    onProductosMarcaLazyLoad(event: TableLazyLoadEvent): void {
+        const clienteId = this.svc.reporte()?.cliente.id;
+        const marcaId = this.marcaSeleccionada()?.marca_id;
+        if (!clienteId || !marcaId) return;
 
         const rows = event.rows ?? PRODUCTOS_PAGE_SIZE;
         const page = Math.floor((event.first ?? 0) / rows) + 1;
@@ -107,19 +126,24 @@ export class SellersReportComponent implements OnInit {
             ordering = event.sortOrder === -1 ? `-${event.sortField}` : event.sortField;
         }
 
-        this.svc.loadProductos(clienteId, {
+        this.svc.loadProductosMarca(clienteId, marcaId, {
             page,
             page_size: rows,
-            search: this.fProductosSearch() || undefined,
+            search: this.fProductosMarcaSearch() || undefined,
             ordering,
         });
     }
 
-    searchProductos(value: string): void {
-        this.fProductosSearch.set(value);
+    searchProductosMarca(value: string): void {
+        this.fProductosMarcaSearch.set(value);
         const clienteId = this.svc.reporte()?.cliente.id;
-        if (clienteId) {
-            this.svc.loadProductos(clienteId, { page: 1, page_size: PRODUCTOS_PAGE_SIZE, search: value || undefined });
+        const marcaId = this.marcaSeleccionada()?.marca_id;
+        if (clienteId && marcaId) {
+            this.svc.loadProductosMarca(clienteId, marcaId, { page: 1, page_size: PRODUCTOS_PAGE_SIZE, search: value || undefined });
         }
+    }
+
+    imprimir(): void {
+        window.print();
     }
 }
