@@ -4,8 +4,8 @@ import { Chart, DoughnutController, ArcElement, Tooltip, Legend } from 'chart.js
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
 const PALETTE = [
-    '#775cff','#34d399','#f59e0b','#60a5fa','#f87171',
-    '#a78bfa','#2dd4bf','#fb923c','#38bdf8','#4ade80',
+    '#121212','#404040','#737373','#a3a3a3','#d4d4d4',
+    '#262626','#525252','#858585','#bdbdbd','#e5e5e5',
 ];
 
 @Component({

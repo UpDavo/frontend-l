@@ -25,10 +25,10 @@ export class StepComponent {
     /** Clase CSS del ícono PrimeIcons, ej. "pi pi-info-circle" */
     readonly icon = input.required<string>();
 
-    /** Color de fondo del círculo del ícono, ej. "bg-indigo-100" */
+    /** Color de fondo del círculo del ícono, ej. "bg-gray-100" */
     readonly iconBg = input<string>('bg-gray-100');
 
-    /** Color del ícono, ej. "text-indigo-600" */
+    /** Color del ícono, ej. "text-gray-900" */
     readonly iconColor = input<string>('text-gray-500');
 
     /** Título del step */

@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule, TableLazyLoadEvent } from 'primeng/table';
@@ -33,15 +33,37 @@ function paletteColors(n: number): string[] {
     ],
     templateUrl: './report.component.html',
 })
-export class SellersReportComponent implements OnInit {
+export class SellersReportComponent implements OnInit, OnDestroy {
     readonly svc = inject(SellersService);
 
     fVendedorId = signal<number | null>(null);
     fClienteId  = signal<number | null>(null);
+    fClientesSearch = signal('');
+    fMarcasSearch = signal('');
 
     readonly vendedorOptions = computed<SelectOption[]>(
         () => this.svc.vendedores().map(v => ({ id: v.id, label: v.nombre })),
     );
+
+    readonly clientesHistoricosLabels = computed(
+        () => this.svc.ventasHistoricasClientes().map(
+            cliente => `${cliente.nombre || 'Sin nombre'} · ${cliente.codigo}`,
+        ),
+    );
+    readonly clientesHistoricosData = computed(
+        () => this.svc.ventasHistoricasClientes().map(cliente => cliente.total_historico),
+    );
+    readonly totalHistoricoVendedor = computed(
+        () => this.clientesHistoricosData().reduce((total, venta) => total + venta, 0),
+    );
+    readonly clientesFiltrados = computed(() => {
+        const query = this.fClientesSearch().trim().toLocaleLowerCase('es');
+        if (!query) return this.svc.clientes();
+        return this.svc.clientes().filter(cliente =>
+            [cliente.codigo, cliente.nombre, cliente.ciudad, cliente.provincia, cliente.zona]
+                .some(value => String(value ?? '').toLocaleLowerCase('es').includes(query)),
+        );
+    });
 
     readonly anios = ANIOS;
 
@@ -59,7 +81,7 @@ export class SellersReportComponent implements OnInit {
         return {
             title: 'Ventas históricas totales',
             value: `$${r.marcas_compradas.reduce((s, m) => s + m.total_historico, 0).toLocaleString('es-EC', { maximumFractionDigits: 0 })}`,
-            gradient: 'primary-indigo',
+            gradient: 'primary-black',
             subtitle: `${r.marcas_compradas.length} marca(s) compradas`,
         };
     });
@@ -73,11 +95,22 @@ export class SellersReportComponent implements OnInit {
     readonly topMarcasLabels = computed(() => this.topMarcas().map(m => m.marca_nombre));
     readonly topMarcasData   = computed(() => this.topMarcas().map(m => m.total_historico));
     readonly topMarcasColors = computed(() => paletteColors(this.topMarcasData().length));
+    readonly marcasFiltradas = computed(() => {
+        const query = this.fMarcasSearch().trim().toLocaleLowerCase('es');
+        const marcas = this.svc.reporte()?.marcas_compradas ?? [];
+        return query
+            ? marcas.filter(marca => marca.marca_nombre.toLocaleLowerCase('es').includes(query))
+            : marcas;
+    });
 
     // ── Marca seleccionada (drill-down de items) ────────────────────
     marcaSeleccionada = signal<MarcaVenta | null>(null);
     fProductosMarcaSearch = signal('');
     itemsTopN = signal<5 | 10>(5);
+    productosMarcaPage = signal(1);
+    readonly productosMarcaTotalPages = computed(
+        () => Math.max(1, Math.ceil(this.svc.productosMarcaTotal() / PRODUCTOS_PAGE_SIZE)),
+    );
 
     readonly topItemsLabels = computed(() => this.svc.topItemsMarca().map(p => p.item_codigo));
     readonly topItemsData   = computed(() => this.svc.topItemsMarca().map(p => p.total_cantidad));
@@ -87,13 +120,23 @@ export class SellersReportComponent implements OnInit {
         this.svc.loadVendedores();
     }
 
+    ngOnDestroy(): void {
+        this.svc.vendedores.set([]);
+        this.svc.reset();
+    }
+
     onVendedorChange(id: number | null): void {
         this.fVendedorId.set(id);
         this.fClienteId.set(null);
         this.marcaSeleccionada.set(null);
+        this.fClientesSearch.set('');
+        this.fMarcasSearch.set('');
         this.fProductosMarcaSearch.set('');
         this.svc.reset();
-        if (id) this.svc.loadClientes(id);
+        if (id) {
+            this.svc.loadClientes(id);
+            this.svc.loadVentasHistoricasClientes(id);
+        }
     }
 
     search(): void {
@@ -105,6 +148,8 @@ export class SellersReportComponent implements OnInit {
         this.fVendedorId.set(null);
         this.fClienteId.set(null);
         this.marcaSeleccionada.set(null);
+        this.fClientesSearch.set('');
+        this.fMarcasSearch.set('');
         this.fProductosMarcaSearch.set('');
         this.svc.reset();
     }
@@ -112,6 +157,7 @@ export class SellersReportComponent implements OnInit {
     selectCliente(cliente: Cliente): void {
         this.fClienteId.set(cliente.id);
         this.marcaSeleccionada.set(null);
+        this.fMarcasSearch.set('');
         this.fProductosMarcaSearch.set('');
         this.svc.loadReporte(cliente.id);
     }
@@ -121,6 +167,7 @@ export class SellersReportComponent implements OnInit {
         if (!clienteId) return;
         this.marcaSeleccionada.set(marca);
         this.fProductosMarcaSearch.set('');
+        this.productosMarcaPage.set(1);
         this.svc.loadProductosMarca(clienteId, marca.marca_id, { page: 1, page_size: PRODUCTOS_PAGE_SIZE });
         this.svc.loadTopItemsMarca(clienteId, marca.marca_id, this.itemsTopN());
     }
@@ -139,6 +186,7 @@ export class SellersReportComponent implements OnInit {
 
         const rows = event.rows ?? PRODUCTOS_PAGE_SIZE;
         const page = Math.floor((event.first ?? 0) / rows) + 1;
+        this.productosMarcaPage.set(page);
 
         let ordering: string | undefined;
         if (event.sortField && typeof event.sortField === 'string') {
@@ -158,8 +206,22 @@ export class SellersReportComponent implements OnInit {
         const clienteId = this.svc.reporte()?.cliente.id;
         const marcaId = this.marcaSeleccionada()?.marca_id;
         if (clienteId && marcaId) {
+            this.productosMarcaPage.set(1);
             this.svc.loadProductosMarca(clienteId, marcaId, { page: 1, page_size: PRODUCTOS_PAGE_SIZE, search: value || undefined });
         }
+    }
+
+    changeProductosMarcaPage(page: number): void {
+        const clienteId = this.svc.reporte()?.cliente.id;
+        const marcaId = this.marcaSeleccionada()?.marca_id;
+        if (!clienteId || !marcaId || page < 1 || page > this.productosMarcaTotalPages()) return;
+
+        this.productosMarcaPage.set(page);
+        this.svc.loadProductosMarca(clienteId, marcaId, {
+            page,
+            page_size: PRODUCTOS_PAGE_SIZE,
+            search: this.fProductosMarcaSearch() || undefined,
+        });
     }
 
     imprimir(): void {

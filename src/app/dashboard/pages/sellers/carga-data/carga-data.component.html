@@ -1,0 +1,315 @@
+<div class="flex flex-col gap-4 sm:gap-5 min-w-0">
+
+    <app-alert-banner type="info" message="Nada se guarda todavía: cada paso solo valida el archivo. Los datos se guardan en la base recién al presionar 'Procesar todo' al final." />
+
+    @if (svc.procesoOk()) {
+    <app-alert-banner type="success" message="Datos guardados correctamente. El reporte de vendedores ya está actualizado." />
+    }
+    @if (svc.procesoError()) {
+    <app-alert-banner type="error" [message]="svc.procesoError()" (dismissed)="svc.procesoError.set(null)" />
+    }
+
+    <!-- Selector de modo -->
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
+        <h3 class="text-base font-semibold text-gray-800">Vendedor</h3>
+        <p class="mt-1 text-sm text-gray-500">Crea un vendedor nuevo desde un archivo, o elige uno existente para agregarle marcas o productos.</p>
+
+        <div class="mt-4 inline-flex rounded-xl border border-gray-200 p-1">
+            <button type="button"
+                class="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                [class.bg-[#121212]]="svc.cargaModo() === 'nuevo'"
+                [class.text-white]="svc.cargaModo() === 'nuevo'"
+                [class.text-gray-600]="svc.cargaModo() !== 'nuevo'"
+                (click)="elegirModo('nuevo')">
+                Vendedor nuevo
+            </button>
+            <button type="button"
+                class="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                [class.bg-[#121212]]="svc.cargaModo() === 'existente'"
+                [class.text-white]="svc.cargaModo() === 'existente'"
+                [class.text-gray-600]="svc.cargaModo() !== 'existente'"
+                (click)="elegirModo('existente')">
+                Vendedor existente
+            </button>
+        </div>
+
+        @if (svc.cargaModo() === 'existente') {
+        <div class="mt-4 w-full sm:w-80">
+            <label class="block text-xs text-gray-500 mb-1">Selecciona un vendedor</label>
+            <app-select-search
+                [options]="vendedorExistenteOptions()"
+                [loading]="svc.cargaVendedorExistenteLoading()"
+                placeholder="Selecciona un vendedor"
+                [value]="svc.cargaVendedorExistenteId()"
+                (valueChange)="onVendedorExistenteChange($event)" />
+        </div>
+        }
+    </section>
+
+    <!-- Paso 1: Vendedor Cliente (solo modo nuevo) -->
+    @if (svc.cargaModo() === 'nuevo') {
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+                <h3 class="text-base font-semibold text-gray-800">1. Vendedor - Cliente</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                    Vendedor y sus clientes asociados. Columnas: Asesor, Id. Cliente, Cliente, Estado, Zona, Provincia, Ciudad.
+                </p>
+            </div>
+            @if (svc.cargaPaso1Preview()) {
+            <span class="inline-flex items-center gap-1 text-sm font-medium text-[#121212]">
+                <i class="pi pi-eye"></i> Previsualizado
+            </span>
+            }
+        </div>
+
+        @if (svc.cargaPaso1Error()) {
+        <div class="mt-3">
+            <app-alert-banner type="error" [message]="svc.cargaPaso1Error()" (dismissed)="svc.cargaPaso1Error.set(null)" />
+        </div>
+        }
+
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button
+                class="inline-flex items-center gap-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 transition-colors"
+                (click)="descargarPlantilla('vendedor-cliente')">
+                <i class="pi pi-download"></i>
+                Plantilla
+            </button>
+
+            <label class="inline-flex items-center gap-2 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors">
+                @if (svc.cargaPaso1Loading()) {
+                <i class="pi pi-spin pi-spinner"></i> Leyendo...
+                } @else {
+                <i class="pi pi-file-excel"></i>
+                {{ svc.cargaPaso1File()?.name ?? 'Seleccionar archivo .xlsx' }}
+                }
+                <input type="file" class="hidden" accept=".xlsx" [disabled]="svc.cargaPaso1Loading()" (change)="onPaso1FileSelected($event)" />
+            </label>
+
+            @if (svc.cargaPaso1Preview()) {
+            <button class="text-xs text-red-500 hover:text-red-700" (click)="svc.quitarPaso1()">Quitar</button>
+            }
+        </div>
+
+        @if (svc.cargaPaso1Preview(); as p) {
+        <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div class="rounded-xl bg-gray-50 p-3 text-center">
+                <p class="text-lg font-semibold text-[#121212]">{{ p.clientes_nuevos + p.clientes_existentes }}</p>
+                <p class="text-xs text-gray-500">Total clientes</p>
+            </div>
+            <div class="rounded-xl bg-gray-50 p-3 text-center">
+                <p class="text-lg font-semibold text-[#121212]">{{ p.clientes_nuevos }}</p>
+                <p class="text-xs text-gray-500">Nuevos</p>
+            </div>
+            <div class="rounded-xl bg-gray-50 p-3 text-center">
+                <p class="text-lg font-semibold text-[#121212]">{{ p.clientes_existentes }}</p>
+                <p class="text-xs text-gray-500">Actualizar</p>
+            </div>
+        </div>
+        }
+    </section>
+    }
+
+    <!-- Skeleton: cargando clientes del vendedor existente -->
+    @if (svc.cargaModo() === 'existente' && svc.cargaVendedorExistenteId() && svc.cargaPaso1Loading()) {
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6 animate-pulse">
+        <div class="h-4 w-40 rounded bg-gray-200"></div>
+        <div class="mt-2 h-3 w-64 rounded bg-gray-100"></div>
+        <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div class="h-16 rounded-xl bg-gray-100"></div>
+            <div class="h-16 rounded-xl bg-gray-100"></div>
+            <div class="h-16 rounded-xl bg-gray-100"></div>
+        </div>
+    </section>
+    }
+
+    <!-- Paso 2: Cliente Marca -->
+    @if (svc.cargaModo() === 'existente' ? svc.cargaClientes().length : svc.cargaPaso1Preview()) {
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+                <h3 class="text-base font-semibold text-gray-800">2. Cliente - Marca</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                    Marcas (fábricas) que compra cada cliente del vendedor y ventas anuales en USD.
+                </p>
+            </div>
+            @if (svc.cargaPaso2Preview()) {
+            <span class="inline-flex items-center gap-1 text-sm font-medium text-[#121212]">
+                <i class="pi pi-eye"></i> Previsualizado
+            </span>
+            }
+        </div>
+
+        @if (svc.cargaPaso2Error()) {
+        <div class="mt-3">
+            <app-alert-banner type="error" [message]="svc.cargaPaso2Error()" (dismissed)="svc.cargaPaso2Error.set(null)" />
+        </div>
+        }
+
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button
+                class="inline-flex items-center gap-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 transition-colors"
+                (click)="descargarPlantilla('cliente-marca')">
+                <i class="pi pi-download"></i>
+                Plantilla
+            </button>
+
+            <label class="inline-flex items-center gap-2 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors">
+                @if (svc.cargaPaso2Loading()) {
+                <i class="pi pi-spin pi-spinner"></i> Leyendo...
+                } @else {
+                <i class="pi pi-file-excel"></i>
+                {{ svc.cargaPaso2File()?.name ?? 'Seleccionar archivo .xlsx' }}
+                }
+                <input type="file" class="hidden" accept=".xlsx" [disabled]="svc.cargaPaso2Loading()" (change)="onPaso2FileSelected($event)" />
+            </label>
+
+            @if (svc.cargaPaso2Preview()) {
+            <button class="text-xs text-red-500 hover:text-red-700" (click)="svc.quitarPaso2()">Quitar</button>
+            }
+        </div>
+
+        @if (svc.cargaPaso2Preview(); as p) {
+        <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div class="rounded-xl bg-gray-50 p-3 text-center">
+                <p class="text-lg font-semibold text-[#121212]">{{ p.ventas_cliente_marca_anio }}</p>
+                <p class="text-xs text-gray-500">Total ventas cliente-marca-año</p>
+            </div>
+            <div class="rounded-xl bg-gray-50 p-3 text-center">
+                <p class="text-lg font-semibold text-[#121212]">{{ p.ventas_nuevas }}</p>
+                <p class="text-xs text-gray-500">Nuevas</p>
+            </div>
+            <div class="rounded-xl bg-gray-50 p-3 text-center">
+                <p class="text-lg font-semibold text-[#121212]">{{ p.ventas_existentes }}</p>
+                <p class="text-xs text-gray-500">Actualizar</p>
+            </div>
+        </div>
+        <p class="mt-2 text-xs text-gray-400">
+            {{ p.marcas_nuevas }} marca(s) nueva(s) en el catálogo, {{ p.marcas_existentes }} ya existían (de otros vendedores).
+        </p>
+        }
+    </section>
+    }
+
+    <!-- Paso 3: Productos por cliente -->
+    @if (svc.cargaModo() === 'existente' ? svc.cargaClientes().length : svc.cargaPaso2Preview()) {
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
+        <h3 class="text-base font-semibold text-gray-800">3. Productos por cliente</h3>
+        <p class="mt-1 text-sm text-gray-500">
+            Un archivo de productos por cada cliente del vendedor (columna DESC. MARCA hace match con las marcas del paso 2).
+            Puedes repetir este paso para varios clientes.
+        </p>
+
+        @if (svc.cargaPaso3Error()) {
+        <div class="mt-3">
+            <app-alert-banner type="error" [message]="svc.cargaPaso3Error()" (dismissed)="svc.cargaPaso3Error.set(null)" />
+        </div>
+        }
+
+        <div class="mt-4 flex flex-wrap items-end gap-3">
+            <button
+                class="inline-flex items-center gap-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 transition-colors"
+                (click)="descargarPlantilla('productos')">
+                <i class="pi pi-download"></i>
+                Plantilla
+            </button>
+
+            <div class="w-full sm:w-64">
+                <app-select-search
+                    [options]="clienteOptions()"
+                    placeholder="Selecciona un cliente"
+                    [value]="paso3ClienteIndex()"
+                    (valueChange)="paso3ClienteIndex.set($event)" />
+            </div>
+
+            <label class="inline-flex items-center gap-2 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors">
+                <i class="pi pi-file-excel"></i>
+                {{ paso3File()?.name ?? 'Seleccionar archivo .xlsx' }}
+                <input type="file" class="hidden" accept=".xlsx" (change)="onPaso3FileSelected($event)" />
+            </label>
+
+            <button
+                class="inline-flex items-center gap-2 rounded-xl bg-[#121212] hover:bg-black disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 transition-colors"
+                [disabled]="!paso3File() || paso3ClienteIndex() === null || svc.cargaPaso3Loading()"
+                (click)="agregarProducto()">
+                @if (svc.cargaPaso3Loading()) {
+                <i class="pi pi-spin pi-spinner"></i> Leyendo...
+                } @else {
+                <i class="pi pi-plus"></i> Agregar
+                }
+            </button>
+        </div>
+
+        @if (svc.cargaProductosEntries().length) {
+        <div class="mt-4 divide-y divide-gray-100 rounded-xl border border-gray-100">
+            @for (e of svc.cargaProductosEntries(); track e.clienteCodigo) {
+            <div class="flex flex-col gap-1.5 px-4 py-2.5 text-sm">
+                <div class="flex items-start justify-between gap-3">
+                    <span class="text-gray-700 min-w-0 break-words">{{ e.clienteCodigo }} · {{ e.clienteNombre }}</span>
+                    <button class="shrink-0 text-xs text-red-500 hover:text-red-700" (click)="svc.quitarProducto(e.clienteCodigo)">Quitar</button>
+                </div>
+                <span class="text-gray-400 text-xs">
+                    Total ventas {{ e.preview.ventas_producto_mensual }}
+                    · Nuevas {{ e.preview.ventas_nuevas }}
+                    · Actualizar {{ e.preview.ventas_existentes }}
+                </span>
+                <p class="text-xs text-gray-400">
+                    {{ e.preview.productos_nuevos }} ítem(s) nuevo(s) en el catálogo, {{ e.preview.productos_existentes }} ya existían (de otros clientes).
+                </p>
+            </div>
+            }
+        </div>
+        }
+    </section>
+    }
+
+    <!-- Procesar todo -->
+    @if (svc.cargaModo() === 'existente' ? svc.cargaClientes().length : svc.cargaPaso2Preview()) {
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h3 class="text-base font-semibold text-gray-800">4. Procesar</h3>
+                <p class="mt-1 text-sm text-gray-500">Guarda todo lo previsualizado en la base de datos.</p>
+            </div>
+            <button
+                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#121212] hover:bg-black disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium px-5 py-2.5 transition-colors"
+                [disabled]="!puedeProcesar()"
+                (click)="procesarTodo()">
+                @if (svc.procesando()) {
+                <i class="pi pi-spin pi-spinner"></i> Procesando...
+                } @else {
+                <i class="pi pi-check"></i> Procesar todo
+                }
+            </button>
+        </div>
+
+        @if (svc.procesando() || svc.procesoOk()) {
+        <div class="mt-4">
+            <div class="h-2.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                <div class="h-full bg-[#121212] transition-all duration-300" [style.width.%]="progresoPct()"></div>
+            </div>
+            <p class="mt-2 text-xs text-gray-500">{{ svc.procesoEtiqueta() || 'Completado.' }}</p>
+        </div>
+        }
+    </section>
+    }
+
+    @if (svc.procesoOk()) {
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <button
+            class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 transition-colors"
+            (click)="empezarOtroVendedor()">
+            <i class="pi pi-refresh"></i>
+            Cargar otro vendedor
+        </button>
+        <button
+            class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 transition-colors"
+            (click)="verReporte()">
+            <i class="pi pi-chart-bar"></i>
+            Ver reporte de vendedores
+        </button>
+    </div>
+    }
+
+</div>

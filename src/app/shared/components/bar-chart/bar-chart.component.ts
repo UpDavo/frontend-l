@@ -6,17 +6,28 @@ Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip);
 @Component({
     selector: 'app-bar-chart',
     standalone: true,
-    template: `<canvas #canvas></canvas>`,
+    template: `
+        <div [style.height.px]="horizontal ? chartHeight : null">
+            <canvas #canvas></canvas>
+        </div>
+    `,
 })
 export class BarChartComponent implements OnChanges, AfterViewInit, OnDestroy {
     @Input() labels: string[] = [];
     @Input() data: number[] = [];
-    @Input() color: string | string[] = '#775cff';
+    @Input() color: string | string[] = '#121212';
+    @Input() horizontal = false;
+    @Input() valuePrefix = '';
+    @Input() aspectRatio = 2.5;
 
     @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
     private chart: Chart | null = null;
     private viewReady = false;
+
+    get chartHeight(): number {
+        return Math.max(300, this.labels.length * 42);
+    }
 
     ngAfterViewInit(): void {
         this.viewReady = true;
@@ -41,9 +52,45 @@ export class BarChartComponent implements OnChanges, AfterViewInit, OnDestroy {
             },
             options: {
                 responsive: true,
-                aspectRatio: 2.5,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                maintainAspectRatio: !this.horizontal,
+                aspectRatio: this.horizontal ? undefined : this.aspectRatio,
+                indexAxis: this.horizontal ? 'y' : 'x',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const value = Number(context.raw ?? 0).toLocaleString('es-EC', {
+                                    maximumFractionDigits: 2,
+                                });
+                                return `${this.valuePrefix}${value}`;
+                            },
+                        },
+                    },
+                },
+                scales: this.horizontal
+                    ? {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (value) =>
+                                    `${this.valuePrefix}${Number(value).toLocaleString('es-EC')}`,
+                            },
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                autoSkip: false,
+                                callback: (_value, index) => {
+                                    const label = this.labels[index] ?? '';
+                                    return label.length > 28 ? `${label.slice(0, 25)}…` : label;
+                                },
+                            },
+                        },
+                    }
+                    : {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    },
             },
         });
     }

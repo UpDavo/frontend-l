@@ -90,9 +90,8 @@ export class TopbarComponent implements OnInit {
       success: { icon: 'pi-check-circle', colors: 'text-green-600 bg-green-100' },
       warning: { icon: 'pi-exclamation-triangle', colors: 'text-amber-600 bg-amber-100' },
       error: { icon: 'pi-times-circle', colors: 'text-red-600 bg-red-100' },
-      invoice: { icon: 'pi-file-edit', colors: 'text-violet-600 bg-violet-100' },
+      invoice: { icon: 'pi-file-edit', colors: 'text-gray-900 bg-gray-100' },
     };
     return map[type] ?? { icon: 'pi-bell', colors: 'text-gray-500 bg-gray-100' };
   }
 }
-

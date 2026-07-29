@@ -92,13 +92,13 @@ export class MovimientoComponent implements OnInit {
 
     intensidadClass(intensidad: number): string {
         if (intensidad === 0)   return 'bg-gray-100';
-        if (intensidad < 0.15) return 'bg-violet-100';
-        if (intensidad < 0.30) return 'bg-violet-200';
-        if (intensidad < 0.45) return 'bg-violet-300';
-        if (intensidad < 0.60) return 'bg-violet-400';
-        if (intensidad < 0.75) return 'bg-violet-500';
-        if (intensidad < 0.88) return 'bg-violet-600';
-        return 'bg-violet-700';
+        if (intensidad < 0.15) return 'bg-gray-100';
+        if (intensidad < 0.30) return 'bg-gray-200';
+        if (intensidad < 0.45) return 'bg-gray-300';
+        if (intensidad < 0.60) return 'bg-gray-400';
+        if (intensidad < 0.75) return 'bg-gray-500';
+        if (intensidad < 0.88) return 'bg-gray-700';
+        return 'bg-[#121212]';
     }
 
     tendenciaIcon(t: PronosticoItem['tendencia']): string {

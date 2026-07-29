@@ -40,9 +40,9 @@
 @theme {
     --font-main: "Space Grotesk", sans-serif;
     --font-mono: "Space Mono", monospace;
-    --color-brand: #775cff;
-    --color-brand-light: #9b85ff;
-    --color-brand-dark: #6344e6;
+    --color-brand: #121212;
+    --color-brand-light: #393939;
+    --color-brand-dark: #000000;
 }
 
 body {

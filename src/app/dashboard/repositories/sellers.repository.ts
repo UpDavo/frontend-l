@@ -19,6 +19,13 @@ export interface Cliente {
     vendedor: number | null;
 }
 
+export interface ClienteVentaHistorica {
+    cliente_id: number;
+    codigo: string;
+    nombre: string;
+    total_historico: number;
+}
+
 export interface MarcaVenta {
     marca_id: number;
     marca_nombre: string;
@@ -41,6 +48,62 @@ export interface ProductoMarca {
     precio_pvp: number | null;
     stock_bod_matriz: number | null;
     total_cantidad: number;
+    total_compra: number;
+}
+
+export interface CargaDataClienteBasico {
+    codigo: string;
+    nombre: string;
+}
+
+export interface CargaVendedorClientePreview {
+    filas: number;
+    vendedor_nombre: string | null;
+    vendedores_nuevos: number;
+    vendedores_existentes: number;
+    clientes_nuevos: number;
+    clientes_existentes: number;
+    clientes: CargaDataClienteBasico[];
+}
+
+export interface CargaVendedorClienteResumen {
+    vendedor_id: number | null;
+    vendedor_nombre: string | null;
+    vendedores: number;
+    clientes: { id: number; codigo: string; nombre: string }[];
+}
+
+export interface CargaClienteMarcaPreview {
+    filas: number;
+    marcas_nuevas: number;
+    marcas_existentes: number;
+    ventas_cliente_marca_anio: number;
+    ventas_nuevas: number;
+    ventas_existentes: number;
+}
+
+export interface CargaClienteMarcaResumen {
+    marcas: number;
+    ventas_cliente_marca_anio: number;
+}
+
+export interface CargaProductosPreview {
+    cliente_codigo: string;
+    filas: number;
+    marcas_nuevas: number;
+    marcas_existentes: number;
+    productos_nuevos: number;
+    productos_existentes: number;
+    ventas_producto_mensual: number;
+    ventas_nuevas: number;
+    ventas_existentes: number;
+}
+
+export interface CargaProductosResumen {
+    cliente_codigo: string;
+    cliente_nombre: string;
+    productos: number;
+    ventas_producto_mensual: number;
 }
 
 export interface PagedResult<T> {
@@ -83,6 +146,12 @@ export class SellersRepository {
         return this.http.get<Cliente[]>(`${this.BASE}/clientes/`, { params: p });
     }
 
+    getVentasHistoricasClientes(vendedorId: number): Observable<ClienteVentaHistorica[]> {
+        return this.http.get<ClienteVentaHistorica[]>(
+            `${this.BASE}/vendedores/${vendedorId}/clientes/ventas-historicas/`,
+        );
+    }
+
     getReporte(clienteId: number): Observable<ReporteCliente> {
         return this.http.get<ReporteCliente>(`${this.BASE}/clientes/${clienteId}/reporte/`);
     }
@@ -100,5 +169,47 @@ export class SellersRepository {
         return this.http.get<PagedResult<ProductoMarca>>(
             `${this.BASE}/clientes/${clienteId}/marcas/${marcaId}/productos/`, { params: p },
         );
+    }
+
+    descargarPlantillaCargaData(tipo: 'vendedor-cliente' | 'cliente-marca' | 'productos'): Observable<Blob> {
+        return this.http.get(`${this.BASE}/carga-data/plantilla/${tipo}/`, { responseType: 'blob' });
+    }
+
+    previsualizarVendedorCliente(file: File): Observable<CargaVendedorClientePreview> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post<CargaVendedorClientePreview>(`${this.BASE}/carga-data/vendedor-cliente/preview/`, formData);
+    }
+
+    aplicarVendedorCliente(file: File): Observable<CargaVendedorClienteResumen> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post<CargaVendedorClienteResumen>(`${this.BASE}/carga-data/vendedor-cliente/`, formData);
+    }
+
+    previsualizarClienteMarca(file: File): Observable<CargaClienteMarcaPreview> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post<CargaClienteMarcaPreview>(`${this.BASE}/carga-data/cliente-marca/preview/`, formData);
+    }
+
+    aplicarClienteMarca(file: File): Observable<CargaClienteMarcaResumen> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post<CargaClienteMarcaResumen>(`${this.BASE}/carga-data/cliente-marca/`, formData);
+    }
+
+    previsualizarProductos(file: File, clienteCodigo: string): Observable<CargaProductosPreview> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('cliente_codigo', clienteCodigo);
+        return this.http.post<CargaProductosPreview>(`${this.BASE}/carga-data/productos/preview/`, formData);
+    }
+
+    aplicarProductos(file: File, clienteCodigo: string): Observable<CargaProductosResumen> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('cliente_codigo', clienteCodigo);
+        return this.http.post<CargaProductosResumen>(`${this.BASE}/carga-data/productos/`, formData);
     }
 }

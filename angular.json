@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "hint-app": {
+    "heimdal-app": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/hint-app",
+            "outputPath": "dist/heimdal-app",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -68,14 +68,14 @@
           "builder": "@angular/build:dev-server",
           "options": {
             "proxyConfig": "proxy.conf.json",
-            "allowedHosts": ["hint.heimdal.ec", "localhost", "hint-app-production.up.railway.app"]
+            "allowedHosts": ["heimdal.ec", "localhost", "heimdal-app-production.up.railway.app"]
           },
           "configurations": {
             "production": {
-              "buildTarget": "hint-app:build:production"
+              "buildTarget": "heimdal-app:build:production"
             },
             "development": {
-              "buildTarget": "hint-app:build:development"
+              "buildTarget": "heimdal-app:build:development"
             }
           },
           "defaultConfiguration": "development"

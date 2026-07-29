@@ -61,28 +61,32 @@ export const DASHBOARD_ROUTES: Routes = [
                         title: 'Ventas Diarias',
                         canActivate: [permissionGuard(PERM.ANALYTICS_VENTAS)],
                         loadComponent: () =>
-                            import('./pages/analytics/ventas/ventas.component').then((m) => m.VentasComponent),
+                            import('./pages/analytics/under-construction/under-construction.component').then((m) => m.AnalyticsUnderConstructionComponent),
+                        data: { title: 'Ventas Diarias' },
                     },
                     {
                         path: 'stock',
                         title: 'Stock Bodega',
                         canActivate: [permissionGuard(PERM.ANALYTICS_STOCK)],
                         loadComponent: () =>
-                            import('./pages/analytics/stock/stock.component').then((m) => m.StockComponent),
+                            import('./pages/analytics/under-construction/under-construction.component').then((m) => m.AnalyticsUnderConstructionComponent),
+                        data: { title: 'Stock Bodega' },
                     },
                     {
                         path: 'importaciones',
                         title: 'Importaciones',
                         canActivate: [permissionGuard(PERM.ANALYTICS_IMPORTACIONES)],
                         loadComponent: () =>
-                            import('./pages/analytics/importaciones/importaciones.component').then((m) => m.ImportacionesComponent),
+                            import('./pages/analytics/under-construction/under-construction.component').then((m) => m.AnalyticsUnderConstructionComponent),
+                        data: { title: 'Importaciones' },
                     },
                     {
                         path: 'movimiento',
                         title: 'Análisis de Movimiento',
                         canActivate: [permissionGuard(PERM.ANALYTICS_MOVIMIENTO)],
                         loadComponent: () =>
-                            import('./pages/analytics/movimiento/movimiento.component').then((m) => m.MovimientoComponent),
+                            import('./pages/analytics/under-construction/under-construction.component').then((m) => m.AnalyticsUnderConstructionComponent),
+                        data: { title: 'Análisis de Movimiento' },
                     },
                 ],
             },
@@ -97,6 +101,13 @@ export const DASHBOARD_ROUTES: Routes = [
                         canActivate: [permissionGuard(PERM.SELLERS_REPORT)],
                         loadComponent: () =>
                             import('./pages/sellers/report/report.component').then((m) => m.SellersReportComponent),
+                    },
+                    {
+                        path: 'carga-data',
+                        title: 'Cargar Data de Vendedores',
+                        canActivate: [permissionGuard(PERM.SELLERS_CARGA_DATA)],
+                        loadComponent: () =>
+                            import('./pages/sellers/carga-data/carga-data.component').then((m) => m.SellersCargaDataComponent),
                     },
                 ],
             },

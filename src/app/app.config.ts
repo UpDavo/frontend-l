@@ -15,20 +15,20 @@ import { definePreset } from '@primeuix/themes';
 import Aura from '@primeuix/themes/aura';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 
-const RevlyPreset = definePreset(Aura, {
+const HeimdalPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50:  '{violet.50}',
-      100: '{violet.100}',
-      200: '{violet.200}',
-      300: '{violet.300}',
-      400: '#9B85FF',
-      500: '#8A70FF',
-      600: '#775CFF',
-      700: '#6344E6',
-      800: '#5035CC',
-      900: '#3D26B3',
-      950: '#2A1A80',
+      50:  '#f5f5f5',
+      100: '#e5e5e5',
+      200: '#d4d4d4',
+      300: '#a3a3a3',
+      400: '#737373',
+      500: '#525252',
+      600: '#121212',
+      700: '#0a0a0a',
+      800: '#050505',
+      900: '#000000',
+      950: '#000000',
     },
   },
 });
@@ -42,7 +42,7 @@ export const appConfig: ApplicationConfig = {
     { provide: TitleStrategy, useClass: AppTitleStrategy },
     providePrimeNG({
       theme: {
-        preset: RevlyPreset,
+        preset: HeimdalPreset,
         options: {
           darkModeSelector: false,
         },

@@ -15,11 +15,14 @@ export class FilterBarComponent {
 
     get gridClass(): string {
         const map: Record<number, string> = {
-            4: 'grid grid-cols-2 md:grid-cols-4 gap-3 items-end',
-            5: 'grid grid-cols-2 md:grid-cols-5 gap-3 items-end',
-            6: 'grid grid-cols-2 md:grid-cols-6 gap-3 items-end',
-            7: 'grid grid-cols-2 md:grid-cols-7 gap-3 items-end',
-            8: 'grid grid-cols-2 md:grid-cols-8 gap-3 items-end',
+            1: 'grid grid-cols-1 sm:grid-cols-2 gap-3 items-end',
+            2: 'grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-3 items-end',
+            3: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-end',
+            4: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end',
+            5: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end',
+            6: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 items-end',
+            7: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-3 items-end',
+            8: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-8 gap-3 items-end',
         };
         return map[this.cols] ?? map[4];
     }

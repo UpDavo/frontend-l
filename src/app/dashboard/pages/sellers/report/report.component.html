@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-5">
+<div class="flex flex-col gap-4 sm:gap-5 min-w-0">
 
     <!-- Alertas -->
     @if (svc.error()) {
@@ -6,11 +6,12 @@
     }
 
     <!-- Filtros -->
-    <app-filter-bar [isLoading]="svc.loading()" [cols]="4"
+    <app-filter-bar [isLoading]="svc.loading()" [cols]="2"
         (search)="search()" (clear)="reset()">
-        <div>
+        <div class="w-full md:max-w-md">
             <label class="block text-xs text-gray-500 mb-1">Vendedor</label>
             <app-select-search
+                class="block w-full"
                 [options]="vendedorOptions()"
                 placeholder="Selecciona un vendedor"
                 [value]="fVendedorId()"
@@ -20,7 +21,7 @@
 
     <!-- Estado vacío -->
     @if (!fVendedorId()) {
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 flex flex-col items-center justify-center text-center gap-2">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7 sm:p-10 flex flex-col items-center justify-center text-center gap-2">
         <i class="pi pi-user-edit text-3xl text-gray-300"></i>
         <p class="text-sm text-gray-500">Selecciona un vendedor para ver la lista de sus clientes.</p>
     </div>
@@ -28,20 +29,105 @@
 
     <!-- Clientes del vendedor -->
     @if (fVendedorId()) {
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-4 sm:px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-4 flex-wrap">
+            <div>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">Prioridad comercial</p>
+                <h3 class="mt-1 text-base font-semibold text-gray-800">Ventas históricas por cliente</h3>
+                <p class="mt-0.5 text-xs text-gray-400">Todos los clientes del vendedor, ordenados de mayor a menor.</p>
+            </div>
+            @if (!svc.loadingVentasHistoricas()) {
+            <div class="w-full border-t border-gray-100 pt-3 text-left sm:w-auto sm:border-0 sm:pt-0 sm:text-right">
+                <p class="text-[11px] uppercase tracking-wide text-gray-400">Total cartera histórica</p>
+                <p class="mt-1 text-lg font-bold text-[#121212]">
+                    ${{ totalHistoricoVendedor() | number:'1.0-0' }}
+                </p>
+            </div>
+            }
+        </div>
+
+        @if (svc.loadingVentasHistoricas()) {
+        <div class="flex min-h-72 items-center justify-center">
+            <i class="pi pi-spin pi-spinner text-2xl text-brand"></i>
+        </div>
+        } @else if (svc.ventasHistoricasClientes().length) {
+        <div class="max-h-160 overflow-y-auto p-2 sm:p-4">
+            <app-bar-chart
+                [labels]="clientesHistoricosLabels()"
+                [data]="clientesHistoricosData()"
+                color="#121212"
+                [horizontal]="true"
+                valuePrefix="$" />
+        </div>
+        } @else {
+        <div class="flex min-h-56 flex-col items-center justify-center gap-2 px-6 text-center">
+            <i class="pi pi-chart-bar text-3xl text-gray-300"></i>
+            <p class="text-sm text-gray-500">Este vendedor no tiene clientes registrados.</p>
+        </div>
+        }
+    </section>
+
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+        <div class="px-4 sm:px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
             <div>
                 <h3 class="text-base font-semibold text-gray-700">Clientes del vendedor</h3>
                 <p class="text-xs text-gray-400 mt-0.5">Selecciona un cliente para ver su reporte</p>
             </div>
-            <div class="relative">
+            <div class="relative w-full sm:w-auto">
                 <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
                 <input type="text" placeholder="Buscar cliente..."
-                    (input)="dtClientes.filterGlobal($any($event.target).value, 'contains')"
-                    class="border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                    [value]="fClientesSearch()"
+                    (input)="fClientesSearch.set($any($event.target).value)"
+                    class="w-full border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 sm:w-64" />
             </div>
         </div>
-        <p-table #dtClientes [value]="svc.clientes()" [loading]="svc.loadingClientes()"
+
+        <!-- Cards de clientes — mobile -->
+        <div class="md:hidden">
+            @if (svc.loadingClientes()) {
+            <div class="flex min-h-48 items-center justify-center">
+                <i class="pi pi-spin pi-spinner text-xl text-brand"></i>
+            </div>
+            } @else if (clientesFiltrados().length) {
+            <div class="divide-y divide-gray-100">
+                @for (c of clientesFiltrados(); track c.id) {
+                <button type="button" (click)="selectCliente(c)"
+                    class="w-full p-4 text-left transition-colors active:bg-gray-100"
+                    [class.bg-gray-50]="fClienteId() === c.id">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="shrink-0 rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">
+                                    {{ c.codigo }}
+                                </span>
+                                <span class="px-2 py-0.5 rounded-lg text-[11px] font-medium"
+                                    [class.bg-emerald-50]="c.estado === 'Activo'"
+                                    [class.text-emerald-600]="c.estado === 'Activo'"
+                                    [class.bg-red-50]="c.estado !== 'Activo'"
+                                    [class.text-red-600]="c.estado !== 'Activo'">
+                                    {{ c.estado || 'Sin estado' }}
+                                </span>
+                            </div>
+                            <p class="mt-2 truncate text-sm font-semibold text-gray-900">{{ c.nombre || 'Sin nombre' }}</p>
+                            <p class="mt-1 text-xs text-gray-500">
+                                <i class="pi pi-map-marker mr-1 text-[10px]"></i>
+                                {{ c.ciudad || 'Sin ciudad' }} · {{ c.provincia || 'Sin provincia' }}
+                            </p>
+                            <p class="mt-1 text-xs text-gray-400">Zona {{ c.zona || '—' }}</p>
+                        </div>
+                        <i class="pi pi-chevron-right mt-1 shrink-0 text-xs text-gray-300"></i>
+                    </div>
+                </button>
+                }
+            </div>
+            } @else {
+            <p class="px-5 py-8 text-center text-sm text-gray-400">No hay clientes que coincidan con la búsqueda.</p>
+            }
+        </div>
+
+        <!-- Tabla de clientes — desktop -->
+        <div class="hidden md:block">
+        <p-table [value]="clientesFiltrados()" [loading]="svc.loadingClientes()"
             [paginator]="true" [rows]="5" [globalFilterFields]="['codigo', 'nombre', 'ciudad', 'provincia', 'zona']"
             [rowsPerPageOptions]="[5, 10, 15]" responsiveLayout="scroll">
             <ng-template #header>
@@ -56,7 +142,7 @@
             </ng-template>
             <ng-template #body let-c>
                 <tr class="cursor-pointer transition-colors hover:bg-brand/5"
-                    [style.background-color]="fClienteId() === c.id ? '#eef2ff' : null"
+                    [style.background-color]="fClienteId() === c.id ? '#f5f5f5' : null"
                     (click)="selectCliente(c)">
                     <td class="font-medium text-gray-800">{{ c.codigo }}</td>
                     <td class="text-gray-700">{{ c.nombre || '—' }}</td>
@@ -78,6 +164,7 @@
                 <tr><td colspan="6" class="text-center text-sm text-gray-400 py-6">Este vendedor no tiene clientes registrados.</td></tr>
             </ng-template>
         </p-table>
+        </div>
     </div>
     }
 
@@ -92,7 +179,7 @@
     <div id="report-print-area" class="flex flex-col gap-5">
 
         <!-- Datos del cliente -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 flex flex-col gap-3">
             <div class="flex items-start justify-between flex-wrap gap-3">
                 <div>
                     <h2 class="text-lg font-semibold text-gray-800">{{ r.cliente.nombre || '—' }}</h2>
@@ -130,7 +217,7 @@
         <!-- Ventas por año -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
             <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Ventas por año (todas las marcas)</p>
-            <app-bar-chart [labels]="resumenLabels()" [data]="resumenData()" [color]="resumenColors()" />
+            <app-bar-chart [labels]="resumenLabels()" [data]="resumenData()" [color]="resumenColors()" [aspectRatio]="1.5" />
         </div>
 
         <!-- Top marcas -->
@@ -149,7 +236,7 @@
                 </div>
             </div>
             @if (topMarcas().length) {
-            <app-bar-chart [labels]="topMarcasLabels()" [data]="topMarcasData()" [color]="topMarcasColors()" />
+            <app-bar-chart [labels]="topMarcasLabels()" [data]="topMarcasData()" [color]="topMarcasColors()" [aspectRatio]="1.5" />
             <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mt-3 mb-1.5">Rango de años con compras</p>
             <div class="flex flex-wrap gap-2">
                 @for (m of topMarcas(); track m.marca_id) {
@@ -165,19 +252,67 @@
 
         <!-- Marcas compradas -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+            <div class="px-4 sm:px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
                 <div>
                     <h3 class="text-base font-semibold text-gray-700">Marcas que compra</h3>
                     <p class="text-xs text-gray-400 mt-0.5">Historial de ventas por marca y año (USD) · Haz clic en una marca para ver sus items</p>
                 </div>
-                <div class="relative" data-no-print>
+                <div class="relative w-full sm:w-auto" data-no-print>
                     <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
                     <input type="text" placeholder="Buscar marca..."
-                        (input)="dtMarcas.filterGlobal($any($event.target).value, 'contains')"
-                        class="border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                        [value]="fMarcasSearch()"
+                        (input)="fMarcasSearch.set($any($event.target).value)"
+                        class="w-full border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 sm:w-64" />
                 </div>
             </div>
-            <p-table #dtMarcas [value]="r.marcas_compradas" [paginator]="true" [rows]="5"
+
+            <!-- Cards de marcas — mobile -->
+            <div class="md:hidden">
+                @if (marcasFiltradas().length) {
+                <div class="divide-y divide-gray-100">
+                    @for (m of marcasFiltradas(); track m.marca_id) {
+                    <button type="button" (click)="selectMarca(m)"
+                        class="w-full p-4 text-left transition-colors active:bg-gray-100"
+                        [class.bg-gray-50]="marcaSeleccionada()?.marca_id === m.marca_id">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-semibold text-gray-900">{{ m.marca_nombre }}</p>
+                                <p class="mt-1 text-xl font-bold text-[#121212]">${{ m.total_historico | number:'1.0-0' }}</p>
+                            </div>
+                            @if (m.en_riesgo) {
+                            <span class="shrink-0 rounded-lg bg-red-50 px-2 py-1 text-[10px] font-medium text-red-600">
+                                Sin compras recientes
+                            </span>
+                            } @else {
+                            <span class="shrink-0 rounded-lg bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-600">
+                                Activa
+                            </span>
+                            }
+                        </div>
+                        <div class="mt-3 grid grid-cols-5 gap-1 border-t border-gray-100 pt-3">
+                            @for (a of anios; track a) {
+                            <div class="min-w-0 text-center">
+                                <p class="text-[10px] font-medium text-gray-400">{{ a }}</p>
+                                <p class="mt-0.5 truncate text-[11px] font-semibold text-gray-700">
+                                    {{ m.anios[a] ? ('$' + (m.anios[a] | number:'1.0-0')) : '—' }}
+                                </p>
+                            </div>
+                            }
+                        </div>
+                        <p class="mt-3 flex items-center justify-end gap-1 text-[11px] font-medium text-gray-500">
+                            Ver ítems <i class="pi pi-chevron-right text-[9px]"></i>
+                        </p>
+                    </button>
+                    }
+                </div>
+                } @else {
+                <p class="px-5 py-8 text-center text-sm text-gray-400">No hay marcas que coincidan con la búsqueda.</p>
+                }
+            </div>
+
+            <!-- Tabla de marcas — desktop -->
+            <div class="hidden md:block">
+            <p-table [value]="marcasFiltradas()" [paginator]="true" [rows]="5"
                 [globalFilterFields]="['marca_nombre']" [rowsPerPageOptions]="[5, 10, 15]"
                 responsiveLayout="scroll">
                 <ng-template #header>
@@ -192,7 +327,7 @@
                 </ng-template>
                 <ng-template #body let-m>
                     <tr class="cursor-pointer transition-colors hover:bg-brand/5"
-                        [style.background-color]="marcaSeleccionada()?.marca_id === m.marca_id ? '#eef2ff' : null"
+                        [style.background-color]="marcaSeleccionada()?.marca_id === m.marca_id ? '#f5f5f5' : null"
                         (click)="selectMarca(m)">
                         <td class="font-medium text-gray-800">{{ m.marca_nombre }}</td>
                         @for (a of anios; track a) {
@@ -216,6 +351,7 @@
                     <tr><td [attr.colspan]="anios.length + 3" class="text-center text-sm text-gray-400 py-6">Este cliente no tiene compras registradas.</td></tr>
                 </ng-template>
             </p-table>
+            </div>
         </div>
 
         <!-- Detalle de la marca seleccionada -->
@@ -242,7 +378,7 @@
             @if (svc.topItemsMarcaLoading()) {
             <div class="flex items-center justify-center py-10"><i class="pi pi-spin pi-spinner text-xl text-brand"></i></div>
             } @else if (topItemsLabels().length) {
-            <app-bar-chart [labels]="topItemsLabels()" [data]="topItemsData()" [color]="topItemsColors()" />
+            <app-bar-chart [labels]="topItemsLabels()" [data]="topItemsData()" [color]="topItemsColors()" [aspectRatio]="1.5" />
             } @else {
             <p class="text-sm text-gray-400 py-4 text-center">No hay items comprados registrados para esta marca todavía.</p>
             }
@@ -250,19 +386,81 @@
 
         <!-- Items comprados de la marca -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+            <div class="px-4 sm:px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
                 <div>
                     <h3 class="text-base font-semibold text-gray-700">Items de {{ marca.marca_nombre }}</h3>
                     <p class="text-xs text-gray-400 mt-0.5">Items que este cliente compró de esta marca</p>
                 </div>
-                <div class="relative" data-no-print>
+                <div class="relative w-full sm:w-auto" data-no-print>
                     <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
                     <input type="text" placeholder="Buscar item o descripción..."
                         [ngModel]="fProductosMarcaSearch()"
                         (ngModelChange)="searchProductosMarca($event)"
-                        class="border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                        class="w-full border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 sm:w-72" />
                 </div>
             </div>
+
+            <!-- Cards de ítems — mobile -->
+            <div class="md:hidden">
+                @if (svc.productosMarcaLoading()) {
+                <div class="flex min-h-48 items-center justify-center">
+                    <i class="pi pi-spin pi-spinner text-xl text-brand"></i>
+                </div>
+                } @else if (svc.productosMarca().length) {
+                <div class="divide-y divide-gray-100">
+                    @for (p of svc.productosMarca(); track p.item_codigo) {
+                    <article class="p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <span class="inline-flex rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-700">
+                                    {{ p.item_codigo }}
+                                </span>
+                                <p class="mt-2 text-sm leading-5 text-gray-700">{{ p.descripcion || 'Sin descripción' }}</p>
+                            </div>
+                            <div class="shrink-0 text-right">
+                                <p class="text-[10px] uppercase tracking-wide text-gray-400">Comprados</p>
+                                <p class="mt-0.5 text-lg font-bold text-[#121212]">{{ p.total_cantidad | number:'1.0-0' }}</p>
+                            </div>
+                        </div>
+                        <dl class="mt-3 grid grid-cols-2 gap-3 rounded-xl bg-gray-50 p-3">
+                            <div>
+                                <dt class="text-[10px] uppercase tracking-wide text-gray-400">PVP</dt>
+                                <dd class="mt-0.5 text-sm font-semibold text-gray-700">
+                                    {{ p.precio_pvp ? ('$' + (p.precio_pvp | number:'1.2-2')) : '—' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-[10px] uppercase tracking-wide text-gray-400">Total Compra</dt>
+                                <dd class="mt-0.5 text-sm font-semibold text-gray-700">{{ '$' + (p.total_compra | number:'1.2-2') }}</dd>
+                            </div>
+                        </dl>
+                    </article>
+                    }
+                </div>
+                <div class="flex items-center justify-between border-t border-gray-100 px-4 py-3">
+                    <button type="button"
+                        (click)="changeProductosMarcaPage(productosMarcaPage() - 1)"
+                        [disabled]="productosMarcaPage() <= 1"
+                        class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 disabled:opacity-30">
+                        <i class="pi pi-chevron-left text-xs"></i>
+                    </button>
+                    <p class="text-xs font-medium text-gray-500">
+                        Página {{ productosMarcaPage() }} de {{ productosMarcaTotalPages() }}
+                    </p>
+                    <button type="button"
+                        (click)="changeProductosMarcaPage(productosMarcaPage() + 1)"
+                        [disabled]="productosMarcaPage() >= productosMarcaTotalPages()"
+                        class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 disabled:opacity-30">
+                        <i class="pi pi-chevron-right text-xs"></i>
+                    </button>
+                </div>
+                } @else {
+                <p class="px-5 py-8 text-center text-sm text-gray-400">No hay ítems comprados registrados para esta marca.</p>
+                }
+            </div>
+
+            <!-- Tabla de ítems — desktop -->
+            <div class="hidden md:block">
             <p-table [value]="svc.productosMarca()" [lazy]="true" (onLazyLoad)="onProductosMarcaLazyLoad($event)"
                 [paginator]="true" [rows]="5" [totalRecords]="svc.productosMarcaTotal()" [loading]="svc.productosMarcaLoading()"
                 [rowsPerPageOptions]="[5, 10, 15]" responsiveLayout="scroll">
@@ -271,8 +469,8 @@
                         <th pSortableColumn="item_codigo">Item <p-sortIcon field="item_codigo" /></th>
                         <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion" /></th>
                         <th pSortableColumn="precio_pvp" class="text-right">PVP <p-sortIcon field="precio_pvp" /></th>
-                        <th pSortableColumn="stock_bod_matriz" class="text-right">Stock <p-sortIcon field="stock_bod_matriz" /></th>
                         <th pSortableColumn="total_cantidad" class="text-right">Comprados <p-sortIcon field="total_cantidad" /></th>
+                        <th pSortableColumn="total_compra" class="text-right">Total Compra <p-sortIcon field="total_compra" /></th>
                     </tr>
                 </ng-template>
                 <ng-template #body let-p>
@@ -280,14 +478,15 @@
                         <td class="font-medium text-gray-800 whitespace-nowrap">{{ p.item_codigo }}</td>
                         <td class="text-gray-600 max-w-64 truncate" [title]="p.descripcion">{{ p.descripcion || '—' }}</td>
                         <td class="text-right text-gray-700">{{ p.precio_pvp ? ('$' + (p.precio_pvp | number:'1.2-2')) : '—' }}</td>
-                        <td class="text-right text-gray-700">{{ p.stock_bod_matriz ?? '—' }}</td>
                         <td class="text-right text-gray-700">{{ p.total_cantidad | number:'1.0-0' }}</td>
+                        <td class="text-right font-semibold text-gray-800">{{ '$' + (p.total_compra | number:'1.2-2') }}</td>
                     </tr>
                 </ng-template>
                 <ng-template #emptymessage>
                     <tr><td colspan="5" class="text-center text-sm text-gray-400 py-6">No hay items comprados registrados para esta marca todavía.</td></tr>
                 </ng-template>
             </p-table>
+            </div>
         </div>
         }
 

@@ -17,14 +17,15 @@ export interface MetricCardData {
 
 /** Mapeo de gradiente lógico → clases Tailwind */
 const GRADIENT_MAP: Record<string, string> = {
-    'primary-indigo': 'from-indigo-500 to-purple-600',
+    'primary-black': 'from-[#121212] to-black',
+    'primary-dark': 'from-[#121212] to-black',
     'primary-blue': 'from-blue-500 to-cyan-600',
     'primary-green': 'from-emerald-500 to-teal-600',
     'emerald-teal': 'from-emerald-500 to-teal-600',
     'primary-orange': 'from-orange-500 to-amber-600',
     'primary-red': 'from-red-500 to-rose-600',
-    'pink-purple': 'from-pink-500 to-purple-600',
-    'indigo-purple': 'from-indigo-500 to-violet-600',
+    'neutral-dark': 'from-gray-500 to-[#121212]',
+    'gray-dark': 'from-gray-500 to-[#121212]',
 };
 
 /**
