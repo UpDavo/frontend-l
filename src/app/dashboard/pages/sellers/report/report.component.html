@@ -46,11 +46,28 @@
             }
         </div>
 
+        @if (!svc.loadingVentasHistoricas() && clientesHistoricosConVentas().length) {
+        <div class="px-4 sm:px-5 pt-4 pb-1">
+            <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                <span>Filtrar por total histórico</span>
+                <span class="font-semibold text-gray-700">
+                    ${{ rangoHistoricoActivo()[0] | number:'1.0-0' }} – ${{ rangoHistoricoActivo()[1] | number:'1.0-0' }}
+                </span>
+            </div>
+            <p-slider class="block px-1"
+                [ngModel]="rangoHistoricoActivo()"
+                (ngModelChange)="onRangoHistoricoChange($event)"
+                [range]="true"
+                [min]="rangoHistoricoBounds()[0]"
+                [max]="rangoHistoricoBounds()[1]" />
+        </div>
+        }
+
         @if (svc.loadingVentasHistoricas()) {
         <div class="flex min-h-72 items-center justify-center">
             <i class="pi pi-spin pi-spinner text-2xl text-brand"></i>
         </div>
-        } @else if (svc.ventasHistoricasClientes().length) {
+        } @else if (clientesHistoricosFiltrados().length) {
         <div class="max-h-160 overflow-y-auto p-2 sm:p-4">
             <app-bar-chart
                 [labels]="clientesHistoricosLabels()"
@@ -58,6 +75,11 @@
                 color="#121212"
                 [horizontal]="true"
                 valuePrefix="$" />
+        </div>
+        } @else if (svc.ventasHistoricasClientes().length) {
+        <div class="flex min-h-56 flex-col items-center justify-center gap-2 px-6 text-center">
+            <i class="pi pi-sliders-h text-3xl text-gray-300"></i>
+            <p class="text-sm text-gray-500">Ningún cliente coincide con el rango seleccionado.</p>
         </div>
         } @else {
         <div class="flex min-h-56 flex-col items-center justify-center gap-2 px-6 text-center">

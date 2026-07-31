@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule, TableLazyLoadEvent } from 'primeng/table';
+import { SliderModule } from 'primeng/slider';
 import { SellersService } from '../../../services/sellers/sellers.service';
 import { Cliente, MarcaVenta } from '../../../repositories/sellers.repository';
 import { FilterBarComponent } from '../../../../shared/components/filter-bar/filter-bar.component';
@@ -17,7 +18,7 @@ const PRODUCTOS_PAGE_SIZE = 5;
     selector: 'app-sellers-report',
     standalone: true,
     imports: [
-        CommonModule, FormsModule, TableModule,
+        CommonModule, FormsModule, TableModule, SliderModule,
         FilterBarComponent, AlertBannerComponent,
         MetricCardComponent, BarChartComponent, SelectSearchComponent,
     ],
@@ -38,17 +39,6 @@ export class SellersReportComponent implements OnInit, OnDestroy {
     readonly clientesHistoricosConVentas = computed(
         () => this.svc.ventasHistoricasClientes().filter(cliente => cliente.total_historico > 0),
     );
-    readonly clientesHistoricosLabels = computed(
-        () => this.clientesHistoricosConVentas().map(
-            cliente => `${cliente.nombre || 'Sin nombre'} · ${cliente.codigo}`,
-        ),
-    );
-    readonly clientesHistoricosData = computed(
-        () => this.clientesHistoricosConVentas().map(cliente => cliente.total_historico),
-    );
-    readonly totalHistoricoVendedor = computed(
-        () => this.clientesHistoricosData().reduce((total, venta) => total + venta, 0),
-    );
     // Mapa cliente_id -> total_historico, para ordenar la tabla de clientes
     // igual que la gráfica "Ventas históricas por cliente" (mayor a menor).
     readonly totalHistoricoPorCliente = computed(() => {
@@ -56,11 +46,49 @@ export class SellersReportComponent implements OnInit, OnDestroy {
         for (const c of this.svc.ventasHistoricasClientes()) map.set(c.cliente_id, c.total_historico);
         return map;
     });
+
+    // ── Filtro de rango (min–max) sobre "Ventas históricas por cliente" ──
+    // Afecta tanto la gráfica de arriba como la tabla de clientes de abajo.
+    readonly rangoHistoricoBounds = computed<[number, number]>(() => {
+        const totales = this.clientesHistoricosConVentas().map(c => c.total_historico);
+        if (!totales.length) return [0, 0];
+        return [0, Math.max(...totales)];
+    });
+    fRangoHistorico = signal<[number, number] | null>(null);
+    readonly rangoHistoricoActivo = computed<[number, number]>(
+        () => this.fRangoHistorico() ?? this.rangoHistoricoBounds(),
+    );
+    onRangoHistoricoChange(rango: [number, number]): void {
+        this.fRangoHistorico.set(rango);
+    }
+
+    readonly clientesHistoricosFiltrados = computed(() => {
+        const [min, max] = this.rangoHistoricoActivo();
+        return this.clientesHistoricosConVentas().filter(
+            c => c.total_historico >= min && c.total_historico <= max,
+        );
+    });
+    readonly clientesHistoricosLabels = computed(
+        () => this.clientesHistoricosFiltrados().map(
+            cliente => `${cliente.nombre || 'Sin nombre'} · ${cliente.codigo}`,
+        ),
+    );
+    readonly clientesHistoricosData = computed(
+        () => this.clientesHistoricosFiltrados().map(cliente => cliente.total_historico),
+    );
+    readonly totalHistoricoVendedor = computed(
+        () => this.clientesHistoricosData().reduce((total, venta) => total + venta, 0),
+    );
+
     readonly clientesOrdenados = computed(() => {
         const totales = this.totalHistoricoPorCliente();
-        return [...this.svc.clientes()].sort(
-            (a, b) => (totales.get(b.id) ?? 0) - (totales.get(a.id) ?? 0),
-        );
+        const [min, max] = this.rangoHistoricoActivo();
+        return [...this.svc.clientes()]
+            .filter(c => {
+                const total = totales.get(c.id) ?? 0;
+                return total >= min && total <= max;
+            })
+            .sort((a, b) => (totales.get(b.id) ?? 0) - (totales.get(a.id) ?? 0));
     });
     readonly clientesFiltrados = computed(() => {
         const query = this.fClientesSearch().trim().toLocaleLowerCase('es');
@@ -151,6 +179,7 @@ export class SellersReportComponent implements OnInit, OnDestroy {
         this.fClientesSearch.set('');
         this.fMarcasSearch.set('');
         this.fProductosMarcaSearch.set('');
+        this.fRangoHistorico.set(null);
         this.svc.reset();
         if (id) {
             this.svc.loadClientes(id);
@@ -170,6 +199,7 @@ export class SellersReportComponent implements OnInit, OnDestroy {
         this.fClientesSearch.set('');
         this.fMarcasSearch.set('');
         this.fProductosMarcaSearch.set('');
+        this.fRangoHistorico.set(null);
         this.svc.reset();
     }
 
