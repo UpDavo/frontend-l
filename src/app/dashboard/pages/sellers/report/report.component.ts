@@ -106,6 +106,7 @@ export class SellersReportComponent implements OnInit, OnDestroy {
     // ── Marca seleccionada (drill-down de items) ────────────────────
     marcaSeleccionada = signal<MarcaVenta | null>(null);
     fProductosMarcaSearch = signal('');
+    fMesesAtras = signal<3 | 6 | 12 | null>(null);
     itemsTopN = signal<5 | 10>(5);
     productosMarcaPage = signal(1);
     readonly productosMarcaTotalPages = computed(
@@ -167,9 +168,24 @@ export class SellersReportComponent implements OnInit, OnDestroy {
         if (!clienteId) return;
         this.marcaSeleccionada.set(marca);
         this.fProductosMarcaSearch.set('');
+        this.fMesesAtras.set(null);
         this.productosMarcaPage.set(1);
         this.svc.loadProductosMarca(clienteId, marca.marca_id, { page: 1, page_size: PRODUCTOS_PAGE_SIZE });
         this.svc.loadTopItemsMarca(clienteId, marca.marca_id, this.itemsTopN());
+    }
+
+    setMesesAtras(meses: 3 | 6 | 12 | null): void {
+        this.fMesesAtras.set(meses);
+        const clienteId = this.svc.reporte()?.cliente.id;
+        const marcaId = this.marcaSeleccionada()?.marca_id;
+        if (!clienteId || !marcaId) return;
+        this.productosMarcaPage.set(1);
+        this.svc.loadProductosMarca(clienteId, marcaId, {
+            page: 1,
+            page_size: PRODUCTOS_PAGE_SIZE,
+            search: this.fProductosMarcaSearch() || undefined,
+            meses_atras: meses ?? undefined,
+        });
     }
 
     setItemsTopN(n: 5 | 10): void {
@@ -198,6 +214,7 @@ export class SellersReportComponent implements OnInit, OnDestroy {
             page_size: rows,
             search: this.fProductosMarcaSearch() || undefined,
             ordering,
+            meses_atras: this.fMesesAtras() ?? undefined,
         });
     }
 
@@ -207,7 +224,10 @@ export class SellersReportComponent implements OnInit, OnDestroy {
         const marcaId = this.marcaSeleccionada()?.marca_id;
         if (clienteId && marcaId) {
             this.productosMarcaPage.set(1);
-            this.svc.loadProductosMarca(clienteId, marcaId, { page: 1, page_size: PRODUCTOS_PAGE_SIZE, search: value || undefined });
+            this.svc.loadProductosMarca(clienteId, marcaId, {
+                page: 1, page_size: PRODUCTOS_PAGE_SIZE, search: value || undefined,
+                meses_atras: this.fMesesAtras() ?? undefined,
+            });
         }
     }
 
@@ -221,6 +241,7 @@ export class SellersReportComponent implements OnInit, OnDestroy {
             page,
             page_size: PRODUCTOS_PAGE_SIZE,
             search: this.fProductosMarcaSearch() || undefined,
+            meses_atras: this.fMesesAtras() ?? undefined,
         });
     }
 

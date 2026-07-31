@@ -391,12 +391,32 @@
                     <h3 class="text-base font-semibold text-gray-700">Items de {{ marca.marca_nombre }}</h3>
                     <p class="text-xs text-gray-400 mt-0.5">Items que este cliente compró de esta marca</p>
                 </div>
-                <div class="relative w-full sm:w-auto" data-no-print>
-                    <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                    <input type="text" placeholder="Buscar item o descripción..."
-                        [ngModel]="fProductosMarcaSearch()"
-                        (ngModelChange)="searchProductosMarca($event)"
-                        class="w-full border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 sm:w-72" />
+                <div class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center" data-no-print>
+                    <div class="flex gap-1">
+                        <button type="button" (click)="setMesesAtras(null)"
+                            class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                            [class.bg-brand]="fMesesAtras() === null" [class.text-white]="fMesesAtras() === null"
+                            [class.bg-gray-100]="fMesesAtras() !== null" [class.text-gray-600]="fMesesAtras() !== null">Todos</button>
+                        <button type="button" (click)="setMesesAtras(3)"
+                            class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                            [class.bg-brand]="fMesesAtras() === 3" [class.text-white]="fMesesAtras() === 3"
+                            [class.bg-gray-100]="fMesesAtras() !== 3" [class.text-gray-600]="fMesesAtras() !== 3">3 meses</button>
+                        <button type="button" (click)="setMesesAtras(6)"
+                            class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                            [class.bg-brand]="fMesesAtras() === 6" [class.text-white]="fMesesAtras() === 6"
+                            [class.bg-gray-100]="fMesesAtras() !== 6" [class.text-gray-600]="fMesesAtras() !== 6">6 meses</button>
+                        <button type="button" (click)="setMesesAtras(12)"
+                            class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                            [class.bg-brand]="fMesesAtras() === 12" [class.text-white]="fMesesAtras() === 12"
+                            [class.bg-gray-100]="fMesesAtras() !== 12" [class.text-gray-600]="fMesesAtras() !== 12">12 meses</button>
+                    </div>
+                    <div class="relative w-full sm:w-auto">
+                        <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input type="text" placeholder="Buscar item o descripción..."
+                            [ngModel]="fProductosMarcaSearch()"
+                            (ngModelChange)="searchProductosMarca($event)"
+                            class="w-full border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 sm:w-72" />
+                    </div>
                 </div>
             </div>
 
@@ -424,14 +444,26 @@
                         </div>
                         <dl class="mt-3 grid grid-cols-2 gap-3 rounded-xl bg-gray-50 p-3">
                             <div>
-                                <dt class="text-[10px] uppercase tracking-wide text-gray-400">PVP</dt>
+                                <dt class="text-[10px] uppercase tracking-wide text-gray-400">Precio Mayorista</dt>
                                 <dd class="mt-0.5 text-sm font-semibold text-gray-700">
-                                    {{ p.precio_pvp ? ('$' + (p.precio_pvp | number:'1.2-2')) : '—' }}
+                                    {{ p.precio_mayorista ? ('$' + (p.precio_mayorista | number:'1.2-2')) : '—' }}
                                 </dd>
                             </div>
                             <div>
                                 <dt class="text-[10px] uppercase tracking-wide text-gray-400">Total Compra</dt>
                                 <dd class="mt-0.5 text-sm font-semibold text-gray-700">{{ '$' + (p.total_compra | number:'1.2-2') }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-[10px] uppercase tracking-wide text-gray-400">Stock</dt>
+                                <dd class="mt-0.5 text-sm font-semibold text-gray-700">
+                                    {{ p.stock_bod_matriz ?? '—' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-[10px] uppercase tracking-wide text-gray-400">Fecha Últ. Venta</dt>
+                                <dd class="mt-0.5 text-sm font-semibold text-gray-700">
+                                    {{ p.fecha_ult_venta ? (p.fecha_ult_venta | date:'dd/MM/yyyy') : '—' }}
+                                </dd>
                             </div>
                         </dl>
                     </article>
@@ -468,22 +500,26 @@
                     <tr>
                         <th pSortableColumn="item_codigo">Item <p-sortIcon field="item_codigo" /></th>
                         <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion" /></th>
-                        <th pSortableColumn="precio_pvp" class="text-right">PVP <p-sortIcon field="precio_pvp" /></th>
+                        <th pSortableColumn="precio_mayorista" class="text-right">Precio Mayorista <p-sortIcon field="precio_mayorista" /></th>
+                        <th pSortableColumn="stock_bod_matriz" class="text-right">Stock <p-sortIcon field="stock_bod_matriz" /></th>
                         <th pSortableColumn="total_cantidad" class="text-right">Comprados <p-sortIcon field="total_cantidad" /></th>
                         <th pSortableColumn="total_compra" class="text-right">Total Compra <p-sortIcon field="total_compra" /></th>
+                        <th pSortableColumn="fecha_ult_venta" class="text-right">Fecha Últ. Venta <p-sortIcon field="fecha_ult_venta" /></th>
                     </tr>
                 </ng-template>
                 <ng-template #body let-p>
                     <tr>
                         <td class="font-medium text-gray-800 whitespace-nowrap">{{ p.item_codigo }}</td>
                         <td class="text-gray-600 max-w-64 truncate" [title]="p.descripcion">{{ p.descripcion || '—' }}</td>
-                        <td class="text-right text-gray-700">{{ p.precio_pvp ? ('$' + (p.precio_pvp | number:'1.2-2')) : '—' }}</td>
+                        <td class="text-right text-gray-700">{{ p.precio_mayorista ? ('$' + (p.precio_mayorista | number:'1.2-2')) : '—' }}</td>
+                        <td class="text-right text-gray-700">{{ p.stock_bod_matriz ?? '—' }}</td>
                         <td class="text-right text-gray-700">{{ p.total_cantidad | number:'1.0-0' }}</td>
                         <td class="text-right font-semibold text-gray-800">{{ '$' + (p.total_compra | number:'1.2-2') }}</td>
+                        <td class="text-right text-gray-700 whitespace-nowrap">{{ p.fecha_ult_venta ? (p.fecha_ult_venta | date:'dd/MM/yyyy') : '—' }}</td>
                     </tr>
                 </ng-template>
                 <ng-template #emptymessage>
-                    <tr><td colspan="5" class="text-center text-sm text-gray-400 py-6">No hay items comprados registrados para esta marca todavía.</td></tr>
+                    <tr><td colspan="7" class="text-center text-sm text-gray-400 py-6">No hay items comprados registrados para esta marca todavía.</td></tr>
                 </ng-template>
             </p-table>
             </div>

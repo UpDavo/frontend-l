@@ -45,10 +45,12 @@ export interface ProductoMarca {
     item_codigo: string;
     descripcion: string;
     marca_nombre: string;
-    precio_pvp: number | null;
+    precio_mayorista: number | null;
     stock_bod_matriz: number | null;
+    stock_transito: number | null;
     total_cantidad: number;
     total_compra: number;
+    fecha_ult_venta: string | null;
 }
 
 export interface CargaDataClienteBasico {
@@ -159,13 +161,14 @@ export class SellersRepository {
     getProductosMarca(
         clienteId: number,
         marcaId: number,
-        opts: { page?: number; page_size?: number; search?: string; ordering?: string } = {},
+        opts: { page?: number; page_size?: number; search?: string; ordering?: string; meses_atras?: 3 | 6 | 12 } = {},
     ): Observable<PagedResult<ProductoMarca>> {
         let p = new HttpParams();
         if (opts.page) p = p.set('page', opts.page);
         if (opts.page_size) p = p.set('page_size', opts.page_size);
         if (opts.search) p = p.set('search', opts.search);
         if (opts.ordering) p = p.set('ordering', opts.ordering);
+        if (opts.meses_atras) p = p.set('meses_atras', opts.meses_atras);
         return this.http.get<PagedResult<ProductoMarca>>(
             `${this.BASE}/clientes/${clienteId}/marcas/${marcaId}/productos/`, { params: p },
         );

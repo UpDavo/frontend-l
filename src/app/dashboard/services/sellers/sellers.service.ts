@@ -124,7 +124,7 @@ export class SellersService {
     loadProductosMarca(
         clienteId: number,
         marcaId: number,
-        opts: { page?: number; page_size?: number; search?: string; ordering?: string } = {},
+        opts: { page?: number; page_size?: number; search?: string; ordering?: string; meses_atras?: 3 | 6 | 12 } = {},
     ): void {
         this.productosMarcaLoading.set(true);
         this.repo.getProductosMarca(clienteId, marcaId, opts).subscribe({
