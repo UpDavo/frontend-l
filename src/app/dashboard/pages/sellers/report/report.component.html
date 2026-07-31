@@ -111,7 +111,7 @@
                             <p class="mt-2 truncate text-sm font-semibold text-gray-900">{{ c.nombre || 'Sin nombre' }}</p>
                             <p class="mt-1 text-xs text-gray-500">
                                 <i class="pi pi-map-marker mr-1 text-[10px]"></i>
-                                {{ c.ciudad || 'Sin ciudad' }} · {{ c.provincia || 'Sin provincia' }}
+                                {{ (c.ciudad | uppercase) || 'Sin ciudad' }} · {{ c.provincia || 'Sin provincia' }}
                             </p>
                             <p class="mt-1 text-xs text-gray-400">Zona {{ c.zona || '—' }}</p>
                         </div>
@@ -146,7 +146,7 @@
                     (click)="selectCliente(c)">
                     <td class="font-medium text-gray-800">{{ c.codigo }}</td>
                     <td class="text-gray-700">{{ c.nombre || '—' }}</td>
-                    <td class="text-gray-500">{{ c.ciudad || '—' }}</td>
+                    <td class="text-gray-500">{{ (c.ciudad | uppercase) || '—' }}</td>
                     <td class="text-gray-500">{{ c.provincia || '—' }}</td>
                     <td class="text-gray-500">{{ c.zona || '—' }}</td>
                     <td class="text-center">
@@ -214,40 +214,66 @@
             </div>
         </div>
 
-        <!-- Ventas por año -->
+        <!-- Ventas por año / Top marcas -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Ventas por año (todas las marcas)</p>
-            <app-bar-chart [labels]="resumenLabels()" [data]="resumenData()" [color]="resumenColors()" [aspectRatio]="1.5" />
-        </div>
-
-        <!-- Top marcas -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-            <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-                <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Top marcas por venta histórica</p>
-                <div class="flex gap-1" data-no-print>
-                    <button type="button" (click)="topN.set(5)"
-                        class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
-                        [class.bg-brand]="topN() === 5" [class.text-white]="topN() === 5"
-                        [class.bg-gray-100]="topN() !== 5" [class.text-gray-600]="topN() !== 5">Top 5</button>
-                    <button type="button" (click)="topN.set(10)"
-                        class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
-                        [class.bg-brand]="topN() === 10" [class.text-white]="topN() === 10"
-                        [class.bg-gray-100]="topN() !== 10" [class.text-gray-600]="topN() !== 10">Top 10</button>
-                </div>
+            <div class="flex flex-wrap items-center gap-2 mb-3" data-no-print>
+                <button type="button" (click)="showVentasAnio.set(!showVentasAnio())"
+                    class="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                    [class.bg-brand]="showVentasAnio()" [class.text-white]="showVentasAnio()" [class.border-brand]="showVentasAnio()"
+                    [class.bg-white]="!showVentasAnio()" [class.text-gray-500]="!showVentasAnio()" [class.border-gray-200]="!showVentasAnio()">
+                    Ventas por año (todas las marcas)
+                </button>
+                <button type="button" (click)="showTopMarcas.set(!showTopMarcas())"
+                    class="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                    [class.bg-brand]="showTopMarcas()" [class.text-white]="showTopMarcas()" [class.border-brand]="showTopMarcas()"
+                    [class.bg-white]="!showTopMarcas()" [class.text-gray-500]="!showTopMarcas()" [class.border-gray-200]="!showTopMarcas()">
+                    Top marcas por venta histórica
+                </button>
             </div>
-            @if (topMarcas().length) {
-            <app-bar-chart [labels]="topMarcasLabels()" [data]="topMarcasData()" [color]="topMarcasColors()" [aspectRatio]="1.5" />
-            <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mt-3 mb-1.5">Rango de años con compras</p>
-            <div class="flex flex-wrap gap-2">
-                @for (m of topMarcas(); track m.marca_id) {
-                <span class="px-2.5 py-1 rounded-lg text-xs bg-gray-50 text-gray-500 border border-gray-100">
-                    {{ m.marca_nombre }}: {{ m.primer_anio_compra ?? '—' }}–{{ m.ultimo_anio_compra ?? '—' }}
-                </span>
+
+            @if (!showVentasAnio() && !showTopMarcas()) {
+            <p class="text-sm text-gray-400 py-6 text-center">Activa una pill para mostrar el gráfico correspondiente.</p>
+            }
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                @if (showVentasAnio()) {
+                <div>
+                    <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Ventas por año (todas las marcas)</p>
+                    <app-bar-chart [labels]="resumenLabels()" [data]="resumenData()" color="#121212" [horizontal]="true" valuePrefix="$" />
+                </div>
+                }
+
+                @if (showTopMarcas()) {
+                <div>
+                    <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                        <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Top marcas por venta histórica</p>
+                        <div class="flex gap-1" data-no-print>
+                            <button type="button" (click)="topN.set(5)"
+                                class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                                [class.bg-brand]="topN() === 5" [class.text-white]="topN() === 5"
+                                [class.bg-gray-100]="topN() !== 5" [class.text-gray-600]="topN() !== 5">Top 5</button>
+                            <button type="button" (click)="topN.set(10)"
+                                class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                                [class.bg-brand]="topN() === 10" [class.text-white]="topN() === 10"
+                                [class.bg-gray-100]="topN() !== 10" [class.text-gray-600]="topN() !== 10">Top 10</button>
+                        </div>
+                    </div>
+                    @if (topMarcas().length) {
+                    <app-bar-chart [labels]="topMarcasLabels()" [data]="topMarcasData()" color="#121212" [horizontal]="true" valuePrefix="$" />
+                    <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mt-3 mb-1.5">Rango de años con compras</p>
+                    <div class="flex flex-wrap gap-2">
+                        @for (m of topMarcas(); track m.marca_id) {
+                        <span class="px-2.5 py-1 rounded-lg text-xs bg-gray-50 text-gray-500 border border-gray-100">
+                            {{ m.marca_nombre }}: {{ m.primer_anio_compra ?? '—' }}–{{ m.ultimo_anio_compra ?? '—' }}
+                        </span>
+                        }
+                    </div>
+                    } @else {
+                    <p class="text-sm text-gray-400 py-4 text-center">Este cliente no tiene compras registradas.</p>
+                    }
+                </div>
                 }
             </div>
-            } @else {
-            <p class="text-sm text-gray-400 py-4 text-center">Este cliente no tiene compras registradas.</p>
-            }
         </div>
 
         <!-- Marcas compradas -->

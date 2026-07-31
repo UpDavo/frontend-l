@@ -118,6 +118,14 @@ quill-editor .ql-picker-options {
     z-index: 1000;
 }
 
+/* ── PrimeNG p-table: reserva espacio para que el overlay de carga se
+   centre bien cuando la tabla todavía no tiene filas (evita que el
+   spinner se vea recortado) ── */
+.p-datatable-table-container {
+    position: relative;
+    min-height: 8rem;
+}
+
 /* ── Impresión de reportes — muestra solo #report-print-area, centrado ── */
 @media print {
     body * {
@@ -141,5 +149,22 @@ quill-editor .ql-picker-options {
 
     #report-print-area [data-no-print] {
         display: none !important;
+    }
+
+    /* El motor de impresión no siempre evalúa los breakpoints `md:` de
+       Tailwind (min-width) contra un ancho de página >= 768px, así que el
+       reporte cae en el layout mobile (cards) en vez del desktop (tablas).
+       Forzamos aquí el layout desktop dentro del área imprimible. */
+    #report-print-area .md\:hidden {
+        display: none !important;
+    }
+
+    #report-print-area .hidden.md\:block,
+    #report-print-area .md\:block {
+        display: block !important;
+    }
+
+    #report-print-area .grid.lg\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 }

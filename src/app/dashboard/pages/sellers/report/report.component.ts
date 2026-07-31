@@ -45,21 +45,37 @@ export class SellersReportComponent implements OnInit, OnDestroy {
         () => this.svc.vendedores().map(v => ({ id: v.id, label: v.nombre })),
     );
 
+    readonly clientesHistoricosConVentas = computed(
+        () => this.svc.ventasHistoricasClientes().filter(cliente => cliente.total_historico > 0),
+    );
     readonly clientesHistoricosLabels = computed(
-        () => this.svc.ventasHistoricasClientes().map(
+        () => this.clientesHistoricosConVentas().map(
             cliente => `${cliente.nombre || 'Sin nombre'} · ${cliente.codigo}`,
         ),
     );
     readonly clientesHistoricosData = computed(
-        () => this.svc.ventasHistoricasClientes().map(cliente => cliente.total_historico),
+        () => this.clientesHistoricosConVentas().map(cliente => cliente.total_historico),
     );
     readonly totalHistoricoVendedor = computed(
         () => this.clientesHistoricosData().reduce((total, venta) => total + venta, 0),
     );
+    // Mapa cliente_id -> total_historico, para ordenar la tabla de clientes
+    // igual que la gráfica "Ventas históricas por cliente" (mayor a menor).
+    readonly totalHistoricoPorCliente = computed(() => {
+        const map = new Map<number, number>();
+        for (const c of this.svc.ventasHistoricasClientes()) map.set(c.cliente_id, c.total_historico);
+        return map;
+    });
+    readonly clientesOrdenados = computed(() => {
+        const totales = this.totalHistoricoPorCliente();
+        return [...this.svc.clientes()].sort(
+            (a, b) => (totales.get(b.id) ?? 0) - (totales.get(a.id) ?? 0),
+        );
+    });
     readonly clientesFiltrados = computed(() => {
         const query = this.fClientesSearch().trim().toLocaleLowerCase('es');
-        if (!query) return this.svc.clientes();
-        return this.svc.clientes().filter(cliente =>
+        if (!query) return this.clientesOrdenados();
+        return this.clientesOrdenados().filter(cliente =>
             [cliente.codigo, cliente.nombre, cliente.ciudad, cliente.provincia, cliente.zona]
                 .some(value => String(value ?? '').toLocaleLowerCase('es').includes(query)),
         );
@@ -73,7 +89,10 @@ export class SellersReportComponent implements OnInit, OnDestroy {
     readonly resumenData = computed(
         () => this.svc.reporte()?.resumen_anual.map(r => r.total_usd) ?? [],
     );
-    readonly resumenColors = computed(() => paletteColors(this.resumenData().length));
+
+    // ── Pills de gráficos visibles (card Ventas por año / Top marcas) ──
+    showVentasAnio = signal(false);
+    showTopMarcas = signal(false);
 
     readonly clienteMetric = computed<MetricCardData | null>(() => {
         const r = this.svc.reporte();
@@ -94,7 +113,6 @@ export class SellersReportComponent implements OnInit, OnDestroy {
     );
     readonly topMarcasLabels = computed(() => this.topMarcas().map(m => m.marca_nombre));
     readonly topMarcasData   = computed(() => this.topMarcas().map(m => m.total_historico));
-    readonly topMarcasColors = computed(() => paletteColors(this.topMarcasData().length));
     readonly marcasFiltradas = computed(() => {
         const query = this.fMarcasSearch().trim().toLocaleLowerCase('es');
         const marcas = this.svc.reporte()?.marcas_compradas ?? [];
@@ -158,6 +176,8 @@ export class SellersReportComponent implements OnInit, OnDestroy {
     selectCliente(cliente: Cliente): void {
         this.fClienteId.set(cliente.id);
         this.marcaSeleccionada.set(null);
+        this.showVentasAnio.set(false);
+        this.showTopMarcas.set(false);
         this.fMarcasSearch.set('');
         this.fProductosMarcaSearch.set('');
         this.svc.loadReporte(cliente.id);
