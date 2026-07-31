@@ -13,16 +13,6 @@ import { SelectSearchComponent, SelectOption } from '../../../../shared/componen
 const ANIOS = [2022, 2023, 2024, 2025, 2026];
 const PRODUCTOS_PAGE_SIZE = 5;
 
-// Paleta categórica validada (orden fijo, seguro para daltonismo) — un color por barra.
-const CATEGORICAL_PALETTE = [
-    '#2a78d6', '#eb6834', '#1baf7a', '#eda100',
-    '#e87ba4', '#008300', '#4a3aa7', '#e34948',
-];
-
-function paletteColors(n: number): string[] {
-    return Array.from({ length: n }, (_, i) => CATEGORICAL_PALETTE[i % CATEGORICAL_PALETTE.length]);
-}
-
 @Component({
     selector: 'app-sellers-report',
     standalone: true,
@@ -90,9 +80,20 @@ export class SellersReportComponent implements OnInit, OnDestroy {
         () => this.svc.reporte()?.resumen_anual.map(r => r.total_usd) ?? [],
     );
 
-    // ── Pills de gráficos visibles (card Ventas por año / Top marcas) ──
+    // ── Pills de gráficos visibles (card Ventas por año / Top marcas / Top items) ──
     showVentasAnio = signal(false);
     showTopMarcas = signal(false);
+    showTopItemsCliente = signal(false);
+
+    // Cuántos gráficos de esa card están activos ahora mismo — controla si
+    // el grid es de 1 columna (uno solo, full width) o 2 (grid real).
+    readonly activeChartsCount = computed(() => {
+        let n = 0;
+        if (this.showVentasAnio()) n++;
+        if (this.showTopMarcas()) n++;
+        if (this.marcaSeleccionada() && this.showTopItemsCliente()) n++;
+        return n;
+    });
 
     readonly clienteMetric = computed<MetricCardData | null>(() => {
         const r = this.svc.reporte();
@@ -133,7 +134,6 @@ export class SellersReportComponent implements OnInit, OnDestroy {
 
     readonly topItemsLabels = computed(() => this.svc.topItemsMarca().map(p => p.item_codigo));
     readonly topItemsData   = computed(() => this.svc.topItemsMarca().map(p => p.total_cantidad));
-    readonly topItemsColors = computed(() => paletteColors(this.topItemsData().length));
 
     ngOnInit(): void {
         this.svc.loadVendedores();
@@ -178,6 +178,7 @@ export class SellersReportComponent implements OnInit, OnDestroy {
         this.marcaSeleccionada.set(null);
         this.showVentasAnio.set(false);
         this.showTopMarcas.set(false);
+        this.showTopItemsCliente.set(false);
         this.fMarcasSearch.set('');
         this.fProductosMarcaSearch.set('');
         this.svc.loadReporte(cliente.id);

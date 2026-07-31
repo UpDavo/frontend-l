@@ -126,7 +126,16 @@ quill-editor .ql-picker-options {
     min-height: 8rem;
 }
 
-/* ── Impresión de reportes — muestra solo #report-print-area, centrado ── */
+/* ── Impresión de reportes — muestra solo #report-print-area ──
+   Sin @page los navegadores aplican su margen "Default" (~1in en cada
+   lado), lo que deja el área imprimible mucho más angosta que nuestro
+   ancho fijo anterior (850px) y corta columnas de las tablas. Con
+   márgenes chicos + ancho 100% el contenido se ajusta al área real. */
+@page {
+    size: auto;
+    margin: 8mm;
+}
+
 @media print {
     body * {
         visibility: hidden;
@@ -139,11 +148,10 @@ quill-editor .ql-picker-options {
 
     #report-print-area {
         position: absolute;
-        left: 50%;
+        left: 0;
         top: 0;
-        transform: translateX(-50%);
         width: 100%;
-        max-width: 850px;
+        max-width: 100%;
         margin: 0;
     }
 
